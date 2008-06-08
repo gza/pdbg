@@ -25,22 +25,13 @@
  * @link       http://pdbg.googlecode.com
  */
 
-/**
- * @see Pdbg_Exception
- */
-require_once 'Pdbg/Exception.php';
+$rootDir = dirname(dirname(__FILE__));
 
-/**
- * The package exception class.
- *
- * @category   Development
- * @package    Pdbg
- * @author     Christopher Utz <cutz@chrisutz.com>
- * @copyright  2008 Christopher Utz <cutz@chrisutz.com>
- * @license    http://www.gnu.org/licenses/gpl.html GPLv3
- * @version    SVN: $Id$
- * @link       http://pdbg.googlecode.com
- */
-class Pdbg_Dbgp_Exception extends Pdbg_Exception
-{
-}
+$incDirs = array(
+    $rootDir . DIRECTORY_SEPARATOR . 'library',
+    $rootDir . DIRECTORY_SEPARATOR . 'tests',
+    $rootDir . DIRECTORY_SEPARATOR . 'vendor');
+
+set_include_path(implode(PATH_SEPARATOR, $incDirs));
+
+// vim: sw=4:ts=4:sts=4:et

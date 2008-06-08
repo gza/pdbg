@@ -26,7 +26,7 @@
  */
 
 /**
- * A socket wrapper providing some convenience methods.
+ * Represents a DGBp IDE command.
  *
  * @category   Development
  * @package    Pdbg
@@ -36,80 +36,69 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Socket
+class Pdbg_Net_Dbgp_IdeCommand
 {
     /**
-     * A socket resource handle.
-     *
-     * @var resource
+     * @var string
      */
-    protected $_socket = null;
+    protected $_name = '';
+
+    /**
+     * @var array
+     */
+    protected $_arguments = array();
+
+    /**
+     * @var string
+     */
+    protected $_data = '';
 
     /**
      * Constructs an instance.
      *
+     * @param string $name The name of the command
+     * @param array $arguments The command argument string
+     * @param string $data Optional data to send with the command
      * @return void
      */
-    public function __construct($socket)
+    public function __construct($name, array $arguments = array(), $data = null)
     {
-        $this->_socket = $socket;
+        $this->_name = $name;
+        $this->_arguments = $arguments;
+        $this->_data = $data;
     }
 
     /**
-     * Destructs an instance.
-     *
-     * @return void
-     */
-    public function __destruct()
-    {
-        if (is_resource($this->_socket)) {
-            socket_close($this->_socket);
-        }
-    }
-
-    /**
-     * Returns a string representation of the last error that occurred on the
-     * socket.
+     * Constructs an DBGp IDE command.
      *
      * @return string
      */
-    public function getErrorString()
+    public function build()
     {
-        return socket_strerror(socket_last_error($this->_socket));
-    }
+        $argStr = '';
 
-    /**
-     * Returns the socket resource handle.
-     *
-     * @return resource
-     */
-    public function getHandle()
-    {
-        return $this->_socket;
-    }
-
-    /**
-     * Writes all data in a string to the socket.
-     *
-     * @param string $data The data to write to the socket.
-     * @return void
-     * @throws Pdbg_Socket_Exception
-     */
-    public function writeAll($string)
-    {
-        $len = strlen($string);
-        $amtWritten = 0;
-
-        while ($amtWritten < $len) {
-            $amt = socket_write($this->_socket, substr($string, $amtWritten));
-
-            // TODO: check if connection was closed?
-
-            if (false === $amt) {
-                throw new Pdbg_Socket_Exception($this->getErrorString());
-            }
-
-            $amtWritten += $amt;
+        foreach ($this->_arguments as $label => $value) {
+            $argStr .= ' ' . $label . ' ' . $value;
         }
+
+        $cmdLine = $this->_name . $argStr;
+
+        if (null !== $this->_data) {
+            $cmdLine .= ' -- ' . base64_encode($this->_data);
+        }
+
+        $cmdLine .= "\x00";
+
+        return $cmdLine;
+    }
+
+    /**
+     * Returns a string representation of the command.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->_build;
     }
 }

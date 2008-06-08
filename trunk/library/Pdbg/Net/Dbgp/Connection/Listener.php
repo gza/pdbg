@@ -26,19 +26,19 @@
  */
 
 /**
- * @see Pdbg_Socket
+ * @see Pdbg_Net_Socket
  */
-require_once 'Pdbg/Socket.php';
+require_once 'Pdbg/Net/Socket.php';
 
 /**
- * @see Pdbg_Dbgp_Connection
+ * @see Pdbg_Net_Dbgp_Connection
  */
-require_once 'Pdbg/Dbgp/Connection.php';
+require_once 'Pdbg/Net/Dbgp/Connection.php';
 
 /**
- * @see Pdbg_Dbgp_Connection_Exception
+ * @see Pdbg_Net_Dbgp_Connection_Exception
  */
-require_once 'Pdbg/Dbgp/Connection/Exception.php';
+require_once 'Pdbg/Net/Dbgp/Connection/Exception.php';
 
 /**
  * Listens for incoming DBGp connections.
@@ -51,7 +51,7 @@ require_once 'Pdbg/Dbgp/Connection/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Dbgp_Connection_Listener
+class Pdbg_Net_Dbgp_Connection_Listener
 {
     /**
      * The ip address to listen on for connections from debugger engines.
@@ -66,7 +66,7 @@ class Pdbg_Dbgp_Connection_Listener
     protected $_port = '';
 
     /**
-     * @var Pdbg_Socket
+     * @var Pdbg_Net_Socket
      */
     protected $_socket = null;
 
@@ -93,24 +93,24 @@ class Pdbg_Dbgp_Connection_Listener
     protected function _initListeningSocket()
     {
         if (!function_exists('socket_create')) {
-            throw new Pdbg_Dbgp_Connection_Exception("socket extension is not available");
+            throw new Pdbg_Net_Dbgp_Connection_Exception("socket extension is not available");
         }
 
         $sh = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        $socket = new Pdbg_Socket($sh);
+        $socket = new Pdbg_Net_Socket($sh);
 
         if (!$sh) {
-            throw new Pdbg_Dbgp_Connection_Exception($socket->getErrorString());
+            throw new Pdbg_Net_Dbgp_Connection_Exception($socket->getErrorString());
         }
 
         // bind the socket to the supplied ip/port
         if (!socket_bind($sh, $this->_ipAddress, $this->_port)) {
-            throw new Pdbg_Dbgp_Connection_Exception($socket->getErrorString());
+            throw new Pdbg_Net_Dbgp_Connection_Exception($socket->getErrorString());
         }
 
         // make the socket listen for incoming connections
         if (!socket_listen($sh)) {
-            throw new Pdbg_Dbgp_Connection_Exception($socket->getErrorString());
+            throw new Pdbg_Net_Dbgp_Connection_Exception($socket->getErrorString());
         }
 
         // make the socket asyncronous
@@ -123,14 +123,14 @@ class Pdbg_Dbgp_Connection_Listener
      * Accepts a new connection on the listening socket, or returns false if 
      * there are no pending connections.
      *
-     * @return Pdbg_Dbgp_Connection|false
+     * @return Pdbg_Net_Dbgp_Connection|false
      */
     public function acceptConnection()
     {
         // socket_accept issues a warning message when a connection is not 
         // waiting.
         if (false !== ($inSocket = @socket_accept($this->_socket->getHandle()))) {
-            return new Pdbg_Dbgp_Connection(new Pdbg_Socket($inSocket));
+            return new Pdbg_Net_Dbgp_Connection(new Pdbg_Net_Socket($inSocket));
         } else {
             return false;
         }

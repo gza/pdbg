@@ -26,12 +26,12 @@
  */
 
 /**
- * @see Pdbg_Socket
+ * @see Pdbg_Net_Exception
  */
-require_once 'Pdbg/Socket.php';
+require_once 'Pdbg/Net/Exception.php';
 
 /**
- * A DBGp connection made from a debugging engine.
+ * The package exception class.
  *
  * @category   Development
  * @package    Pdbg
@@ -41,54 +41,6 @@ require_once 'Pdbg/Socket.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Dbgp_Connection
+class Pdbg_Net_Socket_Exception extends Pdbg_Net_Exception
 {
-    /**
-     * @var Pdbg_Socket
-     */
-    protected $_socket = null;
-
-    /**
-     * Constructs an instance.
-     *
-     * @param $socket Pdbg_Socket
-     * @return void
-     */
-    public function __construct(Pdbg_Socket $socket)
-    {
-        $this->_socket = $socket;
-    }
-
-    /**
-     * Constructs an IDE command string.
-     *
-     * @param string $name The name of the command
-     * @param array $arguments The command argument string
-     * @param string $data Optional data to send in the command
-     * @return string
-     */
-    public static function buildCommand($name, array $arguments = array(), $data = null)
-    {
-        $argStr = '';
-
-        foreach ($arguments as $label => $value) {
-            $argStr .= ' ' . $label . ' ' . $value;
-        }
-
-        $cmdLine = $name . $argStr;
-
-        if (null !== $data) {
-            $cmdLine .= ' -- ' . base64_encode($data);
-        }
-
-        $cmdLine .= "\x00";
-
-        return $cmdLine;
-    }
-
-    public static function command($name, array $arguments = array(), $data = null)
-    {
-        $cmd = self::buildCommand($name, $arguments, $data);
-        $this->_socket->writeAll($cmd);
-    }
 }
