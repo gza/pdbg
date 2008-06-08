@@ -43,6 +43,12 @@ require_once 'Pdbg/Net/Dbgp/IdeCommand.php';
  */
 class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * Test to ensure that a command with no args/no data is built
+     * correctly.
+     *
+     * @return void
+     */
     public function testNoArgsNoData()
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status');
@@ -50,6 +56,12 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
         $this->assertEquals("status\x00", $command->build());
     }
 
+    /**
+     * Test to ensure that a command with one argument is built
+     * correctly.
+     *
+     * @return void
+     */
     public function testOneArg()
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status', array('-i' => '1'));
@@ -57,6 +69,12 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
         $this->assertEquals("status -i 1\x00", $command->build());
     }
 
+    /**
+     * Test to ensure that a command with many arguments is built
+     * correctly.
+     *
+     * @return void
+     */
     public function testManyArgs()
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status', array(
@@ -68,6 +86,12 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
         $this->assertEquals("status -a hello -b world -c foo\x00", $command->build());
     }
 
+    /**
+     * Test to ensure that a command with args and data is built
+     * correctly.
+     *
+     * @return void
+     */
     public function testArgsData()
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status', array(
@@ -80,6 +104,12 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
         $this->assertEquals("status -a A -b B -- $b64\x00", $command->build());
     }
 
+    /**
+     * Test to ensure that a command with no args but with data is built
+     * correctly.
+     *
+     * @return void
+     */
     public function testNoArgsData()
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status', array(), 'xyzzy');
@@ -87,5 +117,16 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
         $b64 = base64_encode('xyzzy');
 
         $this->assertEquals("status -- $b64\x00", $command->build());
+    }
+
+    /**
+     * Test to ensure that the __toString magic method works.
+     *
+     * @return void
+     */
+    public function testToString()
+    {
+        $command = new Pdbg_Net_Dbgp_IdeCommand('status');
+        $this->assertEquals("status\x00", (string) $command);
     }
 }
