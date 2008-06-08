@@ -25,13 +25,19 @@
  * @link       http://pdbg.googlecode.com
  */
 
-/**
- * @see Pdbg_Dbgp_Exception
- */
-require_once 'Pdbg/Dbgp/Exception.php';
+if (!defined('PHPUnit_MAIN_METHOD')) {
+    define('PHPUnit_MAIN_METHOD', 'Pdbg_AllTests::main');
+}
+ 
+require_once 'bootstrap.php';
+
+require_once 'PHPUnit/Framework.php';
+require_once 'PHPUnit/TextUI/TestRunner.php';
+
+require_once 'Pdbg/Net/AllTests.php';
 
 /**
- * The package exception class.
+ * AllTests
  *
  * @category   Development
  * @package    Pdbg
@@ -41,6 +47,24 @@ require_once 'Pdbg/Dbgp/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Dbgp_Connection_Exception extends Pdbg_Dbgp_Exception
+class Pdbg_AllTests
 {
+    public static function main()
+    {   
+        PHPUnit_TextUI_TestRunner::run(self::suite());
+    }   
+ 
+    public static function suite()
+    {   
+        $suite = new PHPUnit_Framework_TestSuite('Pdbg');
+
+        $suite->addTest(Pdbg_Net_AllTests::suite());
+ 
+        return $suite;
+    }   
 }
+ 
+if (PHPUnit_MAIN_METHOD == 'Pdbg_AllTests::main') {
+    Pdbg_AllTests::main();
+}
+// vim: sw=4:ts=4:sts=4:et
