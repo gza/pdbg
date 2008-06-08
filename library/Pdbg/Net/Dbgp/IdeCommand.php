@@ -99,6 +99,6 @@ class Pdbg_Net_Dbgp_IdeCommand
      */
     public function __toString()
     {
-        return $this->_build;
+        return $this->build();
     }
 }
