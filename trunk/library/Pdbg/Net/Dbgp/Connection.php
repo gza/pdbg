@@ -43,10 +43,19 @@ require_once 'Pdbg/Net/Socket.php';
  */
 class Pdbg_Net_Dbgp_Connection
 {
+    const DATA_LENGTH = 'dl';
+    const FIRST_NULL  = 'fn';
+    const DATA        = 'da';
+    const SECOND_NULL = 'sn';
+
     /**
      * @var Pdbg_Net_Socket
      */
     protected $_socket = null;
+
+    protected $_responseState = null;
+
+    protected $_responseBuffer = null;
 
     /**
      * Constructs an instance.
