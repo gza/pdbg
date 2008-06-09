@@ -25,21 +25,8 @@
  * @link       http://pdbg.googlecode.com
  */
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    define('PHPUnit_MAIN_METHOD', 'Pdbg_Net_Dbgp_AllTests::main');
-}
- 
-require_once 'bootstrap.php';
-
-require_once 'PHPUnit/Framework.php';
-require_once 'PHPUnit/TextUI/TestRunner.php';
-
-require_once 'Pdbg/Net/Dbgp/EngineResponse/AllTests.php';
-
-require_once 'Pdbg/Net/Dbgp/IdeCommandTest.php';
-
 /**
- * AllTests
+ * Represents a debugger engine response.
  *
  * @category   Development
  * @package    Pdbg
@@ -49,26 +36,21 @@ require_once 'Pdbg/Net/Dbgp/IdeCommandTest.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_AllTests
+class Pdbg_Net_Dbgp_EngineResponse
 {
-    public static function main()
-    {   
-        PHPUnit_TextUI_TestRunner::run(self::suite());
-    }   
- 
-    public static function suite()
-    {   
-        $suite = new PHPUnit_Framework_TestSuite('Pdbg');
+    /**
+     * @var DOMDocument
+     */
+    protected $_doc;
 
-        $suite->addTest(Pdbg_Net_Dbgp_EngineResponse_AllTests::suite());
+    public function __construct($xmlData)
+    {
+        $this->_doc = new DOMDocument();
+        $this->_doc->loadXML($xmlData);
+    }
 
-        $suite->addTestSuite('Pdbg_Net_Dbgp_IdeCommandTest');
- 
-        return $suite;
-    }   
+    public function getDocument()
+    {
+        return $this->_doc;
+    }
 }
- 
-if (PHPUnit_MAIN_METHOD == 'Pdbg_Net_Dbgp_AllTests::main') {
-    Pdbg_Net_Dbgp_AllTests::main();
-}
-// vim: sw=4:ts=4:sts=4:et

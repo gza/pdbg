@@ -139,33 +139,18 @@ class Pdbg_Net_SocketTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Test to ensure that the readAll method works.
+     * Test to ensure that the read method works.
      *
      * @return void
      */
-    public function testReadAll()
+    public function testRead()
     {
         socket_connect($this->_socket->getHandle(), $this->_testIp, 80);
 
         $this->assertEquals(0, $this->_socket->getErrorCode());
         $this->_socket->writeAll("GET / HTTP/1.1\r\n\r\n");
 
-        $response = $this->_socket->readAll(12);
-        $this->assertEquals('HTTP/1.1 200', $response);
-    }
-
-    /**
-     * Simulates the case were socket_read does not read all the data in one
-     * go, in order to ensure that the looping logic of readAll works as
-     * expected.
-     *
-     * @return void
-     */
-    public function testReadAllLimited()
-    {
-        $fn = create_function('$a,$b', 'static $i=0;$r="HTTP/1.1 200";return $r[$i++];');
-
-        $response = $this->_socket->readAll(12, $fn);
+        $response = $this->_socket->read(12);
         $this->assertEquals('HTTP/1.1 200', $response);
     }
 
@@ -174,10 +159,44 @@ class Pdbg_Net_SocketTest extends PHPUnit_Framework_TestCase
      * 
      * @expectedException Pdbg_Net_Socket_Exception
      */
-    public function testReadAllError()
+    public function testReadError()
     {
         $fn = create_function('$a,$b', 'return false;');
 
-        $response = $this->_socket->readAll(1, $fn);
+        $response = $this->_socket->read(1, $fn);
+    }
+
+    /**
+     * Test to ensure that isDataAvailable works correctly when no data is
+     * available.
+     *
+     * @return void
+     */
+    public function testNoDataAvailable()
+    {
+        socket_connect($this->_socket->getHandle(), $this->_testIp, 80);
+        $this->assertEquals(0, $this->_socket->getErrorCode());
+
+        $this->assertFalse($this->_socket->isDataAvailable());
+    }
+
+    /**
+     * Test to ensure that isDataAvailable works correctly when data is 
+     * available. NB - this method assumes that if 1 bytes is available
+     * then at least 1 more is also available, which is a safe assumption
+     * in most cases.
+     *
+     * @return void
+     */
+    public function testDataAvailable()
+    {
+        socket_connect($this->_socket->getHandle(), $this->_testIp, 80);
+        $this->assertEquals(0, $this->_socket->getErrorCode());
+
+        $this->assertEquals(0, $this->_socket->getErrorCode());
+        $this->_socket->writeAll("GET / HTTP/1.1\r\n\r\n");
+
+        $data = $this->_socket->read(1);
+        $this->assertTrue($this->_socket->isDataAvailable());
     }
 }

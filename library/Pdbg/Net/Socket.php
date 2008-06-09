@@ -31,7 +31,8 @@
 require_once 'Pdbg/Net/Socket/Exception.php';
 
 /**
- * A wrapper class that makes using sockets easier.
+ * A wrapper class that makes using sockets easier. This class assumes that
+ * the socket is in blocking mode.
  *
  * @category   Development
  * @package    Pdbg
@@ -132,31 +133,40 @@ class Pdbg_Net_Socket
     }
 
     /**
-     * Reads exactly $length characters from the socket.
+     * Reads at most $length characters from the socket.
      *
      * @param integer $length
      * @param string $readFn The function to use to read the data.
      * @return string
-     * @throws Pdbg_Net_Socket_Exception
+     * @throws Pdbg_Net_Socket_Exception|Pdbg_Net_Socket_WouldBlockException
      */
-    public function readAll($length, $readFn='socket_read')
+    public function read($length, $readFn='socket_read')
     {
-        $amtRead = 0;
-        $result  = '';
+        $data = $readFn($this->_socket, $length);
 
-        while ($amtRead < $length) {
-            $data = $readFn($this->_socket, $length - $amtRead);
-
-            // TODO: check if connection was closed?
-
-            if (false === $data) {
-                throw new Pdbg_Net_Socket_Exception($this->getErrorString());
-            }
-
-            $result  .= $data;
-            $amtRead += strlen($data);
+        if (false === $data) {
+            throw new Pdbg_Net_Socket_Exception($this->getErrorString());
         }
 
-        return $result;
+        return $data;
+    }
+
+    /**
+     * Returns true if data can be read from the socket, false otherwise. If 
+     * this method returns true, then a call to read will not block.
+     *
+     * @return boolean
+     */
+    public function isDataAvailable()
+    {
+        $r = array($this->_socket);
+        $w = array();
+        $e = array();
+
+        if (false === socket_select($r, $w, $e, 0)) {
+            throw new Pdbg_Net_Socket_Exception($this->getErrorString());
+        }
+
+        return (count($r) > 0);
     }
 }

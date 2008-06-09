@@ -130,6 +130,7 @@ class Pdbg_Net_Dbgp_Connection_Listener
         // socket_accept issues a warning message when a connection is not 
         // waiting.
         if (false !== ($inSocket = @socket_accept($this->_socket->getHandle()))) {
+            socket_set_nonblock($inSocket);
             return new Pdbg_Net_Dbgp_Connection(new Pdbg_Net_Socket($inSocket));
         } else {
             return false;
