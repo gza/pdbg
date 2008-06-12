@@ -25,22 +25,12 @@
  * @link       http://pdbg.googlecode.com
  */
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    define('PHPUnit_MAIN_METHOD', 'Pdbg_Net_Dbgp_AllTests::main');
-}
- 
-require_once 'bootstrap.php';
-
-require_once 'PHPUnit/Framework.php';
-require_once 'PHPUnit/TextUI/TestRunner.php';
-
-require_once 'Pdbg/Net/Dbgp/EngineResponse/AllTests.php';
-
-require_once 'Pdbg/Net/Dbgp/IdeCommandTest.php';
-require_once 'Pdbg/Net/Dbgp/ConnectionTest.php';
+/**
+ * @see Pdbg_Net_Socket
+ */
+require_once 'Pdbg/Net/Socket.php';
 
 /**
- * AllTests
  *
  * @category   Development
  * @package    Pdbg
@@ -50,27 +40,48 @@ require_once 'Pdbg/Net/Dbgp/ConnectionTest.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_AllTests
+class Pdbg_Net_Socket_ReadMock extends Pdbg_Net_Socket
 {
-    public static function main()
-    {   
-        PHPUnit_TextUI_TestRunner::run(self::suite());
-    }   
- 
-    public static function suite()
-    {   
-        $suite = new PHPUnit_Framework_TestSuite('Pdbg');
+    /**
+     * @var integer
+     */
+    protected $_amtRead = 0;
 
-        $suite->addTest(Pdbg_Net_Dbgp_EngineResponse_AllTests::suite());
+    /**
+     * @var string
+     */
+    protected $_readBuffer = null;
 
-        $suite->addTestSuite('Pdbg_Net_Dbgp_IdeCommandTest');
-        $suite->addTestSuite('Pdbg_Net_Dbgp_ConnectionTest');
- 
-        return $suite;
-    }   
+    /**
+     *
+     */
+    public function __construct($readBuffer)
+    {
+        $this->_readBuffer = $readBuffer;
+    }
+
+    /**
+     * Mock read method.
+     *
+     * @param integer $length
+     * @param string $readFn
+     * @return string
+     */
+    public function read($length, $readFn='socket_read')
+    {
+        $data = substr($this->_readBuffer, $this->_amtRead, $length);
+        $this->_amtRead = min(strlen($this->_readBuffer), $this->_amtRead + $length);
+
+        return $data;
+    }
+
+    /**
+     * Mock isDataAvailable method.
+     *
+     * @return boolean
+     */
+    public function isDataAvailable()
+    {
+        return ($this->_amtRead < strlen($this->_readBuffer));
+    }
 }
- 
-if (PHPUnit_MAIN_METHOD == 'Pdbg_Net_Dbgp_AllTests::main') {
-    Pdbg_Net_Dbgp_AllTests::main();
-}
-// vim: sw=4:ts=4:sts=4:et

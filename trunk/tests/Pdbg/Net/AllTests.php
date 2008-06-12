@@ -35,6 +35,7 @@ require_once 'PHPUnit/Framework.php';
 require_once 'PHPUnit/TextUI/TestRunner.php';
 
 require_once 'Pdbg/Net/Dbgp/AllTests.php';
+require_once 'Pdbg/Net/Socket/AllTests.php';
 
 require_once 'Pdbg/Net/SocketTest.php';
 
@@ -61,6 +62,7 @@ class Pdbg_Net_AllTests
         $suite = new PHPUnit_Framework_TestSuite('Pdbg');
 
         $suite->addTest(Pdbg_Net_Dbgp_AllTests::suite());
+        $suite->addTest(Pdbg_Net_Socket_AllTests::suite());
 
         $suite->addTestSuite('Pdbg_Net_SocketTest');
  

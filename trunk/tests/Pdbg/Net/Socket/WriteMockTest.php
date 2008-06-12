@@ -25,22 +25,13 @@
  * @link       http://pdbg.googlecode.com
  */
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    define('PHPUnit_MAIN_METHOD', 'Pdbg_Net_Dbgp_AllTests::main');
-}
- 
-require_once 'bootstrap.php';
-
-require_once 'PHPUnit/Framework.php';
-require_once 'PHPUnit/TextUI/TestRunner.php';
-
-require_once 'Pdbg/Net/Dbgp/EngineResponse/AllTests.php';
-
-require_once 'Pdbg/Net/Dbgp/IdeCommandTest.php';
-require_once 'Pdbg/Net/Dbgp/ConnectionTest.php';
+/**
+ * @see Pdbg_Net_Socket_WriteMock
+ */
+require_once 'Pdbg/Net/Socket/WriteMock.php';
 
 /**
- * AllTests
+ * Tests for Pdbg_Net_Socket_WriteMock
  *
  * @category   Development
  * @package    Pdbg
@@ -50,27 +41,47 @@ require_once 'Pdbg/Net/Dbgp/ConnectionTest.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_AllTests
+class Pdbg_Net_Socket_WriteMockTest extends PHPUnit_Framework_TestCase
 {
-    public static function main()
-    {   
-        PHPUnit_TextUI_TestRunner::run(self::suite());
-    }   
- 
-    public static function suite()
-    {   
-        $suite = new PHPUnit_Framework_TestSuite('Pdbg');
+    /**
+     * Test to ensure that the mock behaves correctly when no data has been
+     * written.
+     *
+     * @return void
+     */
+    public function testNoData()
+    {
+        $socket = new Pdbg_Net_Socket_WriteMock();
+        $this->assertEquals('', $socket->getDataWritten());
+    }
 
-        $suite->addTest(Pdbg_Net_Dbgp_EngineResponse_AllTests::suite());
+    /**
+     * Test to ensure that the writeAll mock behaves correctly.
+     *
+     * @return void
+     */
+    public function testWriteAll()
+    {
+        $socket = new Pdbg_Net_Socket_WriteMock();
+        $socket->writeAll('xyz');
 
-        $suite->addTestSuite('Pdbg_Net_Dbgp_IdeCommandTest');
-        $suite->addTestSuite('Pdbg_Net_Dbgp_ConnectionTest');
- 
-        return $suite;
-    }   
+        $this->assertEquals('xyz', $socket->getDataWritten());
+    }
+
+    /**
+     * Test to ensure that the writeAll mock behaves correctly when
+     * called repeatedly.
+     *
+     * @return void
+     */
+    public function testWriteAllMany()
+    {
+        $socket = new Pdbg_Net_Socket_WriteMock();
+
+        $socket->writeAll('xyz');
+        $this->assertEquals('xyz', $socket->getDataWritten());
+
+        $socket->writeAll('123');
+        $this->assertEquals('xyz123', $socket->getDataWritten());
+    }
 }
- 
-if (PHPUnit_MAIN_METHOD == 'Pdbg_Net_Dbgp_AllTests::main') {
-    Pdbg_Net_Dbgp_AllTests::main();
-}
-// vim: sw=4:ts=4:sts=4:et

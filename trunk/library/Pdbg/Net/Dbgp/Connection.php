@@ -31,6 +31,11 @@
 require_once 'Pdbg/Net/Socket.php';
 
 /**
+ * @see Pdbg_Net_Dbgp_EngineResponse_Builder
+ */
+require_once 'Pdbg/Net/Dbgp/EngineResponse/Builder.php';
+
+/**
  * A DBGp connection made from a debugging engine.
  *
  * @category   Development
@@ -43,19 +48,15 @@ require_once 'Pdbg/Net/Socket.php';
  */
 class Pdbg_Net_Dbgp_Connection
 {
-    const DATA_LENGTH = 'dl';
-    const FIRST_NULL  = 'fn';
-    const DATA        = 'da';
-    const SECOND_NULL = 'sn';
-
     /**
      * @var Pdbg_Net_Socket
      */
     protected $_socket = null;
 
-    protected $_responseState = null;
-
-    protected $_responseBuffer = null;
+    /**
+     * @var Pdbg_Net_Dbgp_EngineResponse_Builder
+     */
+    protected $_responseBuilder = null;
 
     /**
      * Constructs an instance.
@@ -79,19 +80,35 @@ class Pdbg_Net_Dbgp_Connection
     }
 
     /**
+     * Reads a response from the socket, or returns null if more data is
+     * pending before a response can be built.
      *
+     * @return Pdbg_Net_Dbgp_EngineResponse|null
      */
     public function readResponse()
     {
-        $dataLength = '';
-
-        while ("\x00" !== ($ch = $this->_socket->readAll(1))) {
-            $dataLength .= $ch;
+        if (!$this->_socket->isDataAvailable()) {
+            return null;
         }
 
-        $xml = $this->_socket->readAll($dataLength);
+        if (null === $this->_responseBuilder) {
+            $this->_responseBuilder = new Pdbg_Net_Dbgp_EngineResponse_Builder();
+        }
 
-        // disregard the NULL byte after the XML
-        $this->_socket->readAll(1);
+        while ($this->_socket->isDataAvailable()) {
+            $reqAmt = $this->_responseBuilder->getRequestedAmount();
+            $data   = $this->_socket->read($reqAmt);
+
+            $this->_responseBuilder->addData($data);
+
+            $response = $this->_responseBuilder->getResponse();
+
+            if (null !== $response) {
+                $this->_responseBuilder = null;
+                return $response;
+            }
+        }
+
+        return null;
     }
 }
