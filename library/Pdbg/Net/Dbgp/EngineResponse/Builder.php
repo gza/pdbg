@@ -96,6 +96,9 @@ class Pdbg_Net_Dbgp_EngineResponse_Builder
      */
     public function addData($data)
     {
+        // TODO: if dataLength exceeds a certain size, this method should throw
+        // an exception.
+
         if (strlen($data) == 0) {
             return;
         }
