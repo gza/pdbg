@@ -70,6 +70,16 @@ class Pdbg_Net_Dbgp_Connection
     }
 
     /**
+     * Returns the connection's socket.
+     *
+     * @return Pdbg_Net_Socket
+     */
+    public function getSocket()
+    {
+        return $this->_socket;
+    }
+
+    /**
      * Writes an DBGp IDE command to the socket.
      *
      * @return void
