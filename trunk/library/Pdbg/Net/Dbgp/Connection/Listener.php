@@ -120,20 +120,19 @@ class Pdbg_Net_Dbgp_Connection_Listener
     }
 
     /**
-     * Accepts a new connection on the listening socket, or returns false if 
+     * Accepts a new connection on the listening socket, or returns null if 
      * there are no pending connections.
      *
-     * @return Pdbg_Net_Dbgp_Connection|false
+     * @return Pdbg_Net_Dbgp_Connection|null
      */
     public function acceptConnection()
     {
         // socket_accept issues a warning message when a connection is not 
         // waiting.
         if (false !== ($inSocket = @socket_accept($this->_socket->getHandle()))) {
-            socket_set_nonblock($inSocket);
             return new Pdbg_Net_Dbgp_Connection(new Pdbg_Net_Socket($inSocket));
         } else {
-            return false;
+            return null;
         }
     }
 }
