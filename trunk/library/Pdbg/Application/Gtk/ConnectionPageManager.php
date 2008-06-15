@@ -26,7 +26,7 @@
  */
 
 /**
- * The main application class.
+ * Manages the main ui notebook pages. 
  *
  * @category   Development
  * @package    Pdbg
@@ -36,26 +36,63 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Application
+class Pdbg_App_Gtk_ConnectionPageManager
 {
     /**
-     * @var GladeXML
+     * @var Pdbg_App_Gtk_ConnectionPageManager
      */
-    protected $_glade = null;
+    protected static $_singleton = null;
 
     /**
-     * Invokes the application.
+     * @var GtkNotebook
+     */
+    protected $_notebook;
+
+    /**
+     * @var array
+     */
+    protected $_connPages = array();
+
+    /**
+     * Constructs an instance.
      *
+     * @param void
+     */
+    private function __construct()
+    {
+    }
+
+    protected static function getInstance()
+    {
+        if (null === $this->_singleton) {
+            $this->_singleton = new Pdbg_App_Gtk_ConnectionPageManager();
+        }
+
+        return $this->_singleton;
+    }
+
+    /**
+     * @param GtkNotebook $notebook
      * @return void
      */
-    public function run()
+    public function setNotebook(GtkNotebook $notebook)
     {
-        $this->_glade = new GladeXML(GLADE_PATH . DIRECTORY_SEPARATOR . 'pdbg.glade');
-        $this->_glade->signal_autoconnect();
+        $this->_notebook = $notebook;
+    }
 
-        $appWindow = $this->_glade->get_widget('appWindow');
-        $appWindow->show();
+    /**
+     * @return GtkNotebook
+     */
+    public function getNotebook()
+    {
+        return $this->_notebook;
+    }
 
-        Gtk::main();
+    /**
+     * 
+     */
+    public function addPageForConnection(Pdbg_Net_Dbgp_Connection $conn)
+    {
+        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPage($conn);
     }
 }

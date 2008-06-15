@@ -86,6 +86,26 @@ class Pdbg_Net_Dbgp_Connection_Listener
     }
 
     /**
+     * Returns the ip address listened on.
+     *
+     * @return string
+     */
+    public function getIpAddress()
+    {
+        return $this->_ipAddress;
+    }
+
+    /**
+     * Returns the port being listened on.
+     *
+     * @return integer
+     */
+    public function getPort()
+    {
+        return $this->_port;
+    }
+
+    /**
      * Initializes the listening socket.
      *
      * @return void
