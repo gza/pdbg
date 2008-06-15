@@ -36,6 +36,8 @@ require_once 'PHPUnit/TextUI/TestRunner.php';
 
 require_once 'Pdbg/Net/AllTests.php';
 
+require_once 'Pdbg/ObservableTest.php';
+
 /**
  * AllTests
  *
@@ -59,6 +61,8 @@ class Pdbg_AllTests
         $suite = new PHPUnit_Framework_TestSuite('Pdbg');
 
         $suite->addTest(Pdbg_Net_AllTests::suite());
+
+        $suite->addTestSuite('Pdbg_ObservableTest');
  
         return $suite;
     }   
