@@ -59,7 +59,7 @@ class Pdbg_Observable
      * @param string $name
      * @return Pdbg_Observable
      */
-    protected function _addEventType($name)
+    public function addEvent($name)
     {
         if (!array_key_exists($name, $this->_events)) {
             $this->_events[$name] = array();
@@ -107,7 +107,7 @@ class Pdbg_Observable
             throw new Pdbg_Exception("unknown event: {$eventName}");
         }
 
-        $this->_events[$eventName] = $observerFn;
+        $this->_events[$eventName][] = $observerFn;
 
         return $this;
     }
