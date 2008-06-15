@@ -44,6 +44,7 @@ require_once 'Pdbg/Exception.php';
  */
 class Pdbg_Observable
 {
+
     /**
      * An array where the keys are event types and the values are arrays
      * of observers of that type.
@@ -51,6 +52,15 @@ class Pdbg_Observable
      * @var array
      */
     private $_events = array();
+
+    /**
+     * Constructs an instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+    }
 
     /**
      * Registers a new event type, which observers can bind to via the
@@ -78,7 +88,7 @@ class Pdbg_Observable
      * @return Pdbg_Observable
      * @throws Pdbg_Exception
      */
-    public function fire($eventName, $args)
+    public function fire($eventName, $args = array())
     {
         $args = (array) $args;
 

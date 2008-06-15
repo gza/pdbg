@@ -26,9 +26,19 @@
  */
 
 /**
- * @see Pdbg_App_Gtk_ConnectionPage
+ * @see Pdbg_Observable
  */
-require_once 'Pdbg/App/Gtk/ConnectionPage.php';
+require_once 'Pdbg/Observable.php';
+
+/**
+ * @see Pdbg_App_ConnectionManager
+ */
+require_once 'Pdbg/App/ConnectionManager.php';
+
+/**
+ * @see Pdbg_App_Gtk_ConnectionPageManager
+ */
+require_once 'Pdbg/App/Gtk/ConnectionPageManager.php';
 
 /**
  * Manages the main ui notebook pages. This class is a singleton.
@@ -41,18 +51,8 @@ require_once 'Pdbg/App/Gtk/ConnectionPage.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_ConnectionPageManager
+class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
 {
-    /**
-     * @var Pdbg_App_Gtk_ConnectionPageManager
-     */
-    protected static $_singleton = null;
-
-    /**
-     * @var GtkNotebook
-     */
-    protected $_notebook;
-
     /**
      * @var array
      */
@@ -63,54 +63,20 @@ class Pdbg_App_Gtk_ConnectionPageManager
      *
      * @param void
      */
-    private function __construct()
+    public function __construct()
     {
+        Pdbg_App::getInstance()->addObserver('new-connection', 
+            array($this, 'onNewConnection'));
     }
 
     /**
-     * Returns the singleton instance of this class.
-     *
-     * @return Pdbg_App_Gtk_ConnectionPageManager
-     */
-    public static function getInstance()
-    {
-        if (null === self::$_singleton) {
-            self::$_singleton = new Pdbg_App_Gtk_ConnectionPageManager();
-        }
-
-        return self::$_singleton;
-    }
-
-    /**
-     * Sets the notebook widget that should contain the connection pages.
-     *
-     * @param GtkNotebook $notebook
-     * @return void
-     */
-    public function setNotebook(GtkNotebook $notebook)
-    {
-        $this->_notebook = $notebook;
-    }
-
-    /**
-     * Returns the notebook widget containing the connection pages.
-     *
-     * @return GtkNotebook
-     */
-    public function getNotebook()
-    {
-        return $this->_notebook;
-    }
-
-    /**
-     *  Adds a new connection page to the notebook.
      *
      *  @param Pdbg_Net_Dbgp_Connection $conn
      *  @return void
      */
-    public function addPageForConnection(Pdbg_Net_Dbgp_Connection $conn)
+    public function onNewConnection(Pdbg_Net_Dbgp_Connection $conn)
     {
         $mgr = new Pdbg_App_ConnectionManager($conn);
-        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPage($mgr);
+        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPageManager($mgr);
     }
 }
