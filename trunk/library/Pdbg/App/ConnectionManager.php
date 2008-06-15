@@ -26,7 +26,17 @@
  */
 
 /**
- * Represents a debugger engine response.
+ * @see Pdbg_Observable
+ */
+require_once 'Pdbg/Observable.php';
+
+/**
+ * @see Pdbg_Net_Dbgp_Connection
+ */
+require_once 'Pdbg/Net/Dbgp/Connection.php';
+
+/**
+ * Manages the application's communications with the debugger engine.
  *
  * @category   Development
  * @package    Pdbg
@@ -36,27 +46,32 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_EngineResponse
+class Pdbg_App_ConnectionManager extends Pdbg_Observable
 {
-    /**
-     * @var DOMDocument
-     */
-    protected $_doc;
+    const AWAITING_INITIAL_RESPONSE = 'AwaitingInitialResponse';
 
-    public function __construct($xmlData)
+    protected $_conn;
+
+    protected $_state;
+
+    public function __construct(Pdbg_Net_Dbgp_Connection $conn)
     {
-        $this->_doc = new DOMDocument();
-        $this->_doc->loadXML($xmlData);
-        $this->_doc->formatOutput = true;
+        $this->_conn  = $conn;
+        $this->_state = self::AWAITING_INITIAL_RESPONSE;
     }
 
-    public function getDocument()
+    public function run()
     {
-        return $this->_doc;
+        if (null === ($response = $this->_conn->readResponse())) {
+            // nothing to do, return ...
+            return;
+        }
+
+        $this->{'_run' . $this->_state}($response);
     }
 
-    public function getXml()
+    protected function _runAwaitingInitialResponse($response)
     {
-        return $this->_doc->saveXML();
+        $this->fire('initialResponse');
     }
 }
