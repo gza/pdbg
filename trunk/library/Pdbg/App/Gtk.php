@@ -26,14 +26,19 @@
  */
 
 /**
+ * @see Pdbg_App
+ */
+require_once 'Pdbg/App.php';
+
+/**
  * @see Pdbg_Net_Dbgp_Connection_Listener
  */
 require_once 'Pdbg/Net/Dbgp/Connection/Listener.php';
 
 /**
- * @see Pdbg_App_Gtk_ConnectionPageManager
+ * @see Pdbg_App_Gtk_ConnectionPagesManager
  */
-require_once 'Pdbg/App/Gtk/ConnectionPageManager.php';
+require_once 'Pdbg/App/Gtk/ConnectionPagesManager.php';
 
 /**
  * The main gtk application class.
@@ -46,8 +51,13 @@ require_once 'Pdbg/App/Gtk/ConnectionPageManager.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk
+class Pdbg_App_Gtk extends Pdbg_App
 {
+    /**
+     * @var Pdbg_Gtk_ConnectionPages_Manager
+     */
+    protected $_connPagesMgr;
+
     /**
      * @var Pdbg_Net_Dbgp_Connection_Listener
      */
@@ -59,6 +69,11 @@ class Pdbg_App_Gtk
     protected $_mainWin;
 
     /**
+     * @var GtkNotebook
+     */
+    protected $_mainNotebook;
+
+    /**
      * Invokes the application.
      *
      * @return void
@@ -67,10 +82,8 @@ class Pdbg_App_Gtk
     {
         $this->_initApp();
         $this->_initGui();
-
         $this->_mainWin->show_all();
 
-        Gtk::timeout_add(500, array($this, 'onTimeout'));
         Gtk::main();
     }
 
@@ -79,7 +92,12 @@ class Pdbg_App_Gtk
      */
     protected function _initApp()
     {
-        $this->_listener = new Pdbg_Net_Dbgp_Connection_Listener();
+        $this->_listener     = new Pdbg_Net_Dbgp_Connection_Listener();
+        $this->_connPagesMgr = new Pdbg_App_Gtk_ConnectionPagesManager();
+
+        $this->addEvent('timeout')->addEvent('new-connection');
+
+        Gtk::timeout_add(500, array($this, 'onTimeout'));
     }
 
     /**
@@ -104,14 +122,19 @@ class Pdbg_App_Gtk
         $this->_mainNotebook->append_page($bodyLbl, $tabLbl);
 
         $this->_mainWin->add($this->_mainNotebook);
-
-        $mgr = Pdbg_App_Gtk_ConnectionPageManager::getInstance();
-        $mgr->setNotebook($this->_mainNotebook);
     }
 
     /**
-     * Called periodically by GTK so that the application can handle its
-     * DBGp connections.
+     * @return GtkNotebook
+     */
+    public function getMainNotebook()
+    {
+        return $this->_mainNotebook;
+    }
+
+    /**
+     * Called periodically by GTK so that the application can do processing
+     * not resulting from UI events.
      * 
      * @return boolean 
      */
@@ -120,10 +143,10 @@ class Pdbg_App_Gtk
         $conn = $this->_listener->acceptConnection();
 
         if (null !== $conn) {
-            // A connection has been made, make a new notebook page for it.
-            $mgr = Pdbg_App_Gtk_ConnectionPageManager::getInstance();
-            $mgr->addPageForConnection($conn);
+            $this->fire('new-connection', $conn);
         }
+
+        $this->fire('timeout');
 
         // Return true to continue calling this callback on the specified 
         // interval.

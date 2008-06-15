@@ -26,6 +26,11 @@
  */
 
 /**
+ * @see Pdbg_Observable
+ */
+require_once 'Pdbg/Observable.php';
+
+/**
  * @see Pdbg_Net_Dbgp_Connection
  */
 require_once 'Pdbg/Net/Dbgp/Connection.php';
@@ -46,7 +51,7 @@ require_once 'Pdbg/App/Gtk/Widget/TextLog.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_ConnectionPage
+class Pdbg_App_Gtk_ConnectionPage extends Pdbg_Observable
 {
     /**
      * @var Pdbg_App_ConnectionManager
@@ -63,10 +68,10 @@ class Pdbg_App_Gtk_ConnectionPage
      */
     public function __construct(Pdbg_App_ConnectionManager $connMgr)
     {
+        parent::__construct();
+
         $this->_connMgr = $connMgr;
         $this->_initGui();
-
-        Gtk::timeout_add(500, array($this, 'onTimeout'));
     }
 
     /**
@@ -92,17 +97,5 @@ class Pdbg_App_Gtk_ConnectionPage
         $mainNotebook = $connPgMgr->getNotebook();
         $mainNotebook->append_page($fileSplit);
         $mainNotebook->show_all();
-    }
-
-    public function onTimeout()
-    {
-        /*
-        if (null !== $response = $this->_conn->readResponse()) {
-            $this->_commTextLog->appendText($response->getXml());
-        }
-        */
-        $this->_connMgr->run();
-
-        return true;
     }
 }

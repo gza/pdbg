@@ -31,6 +31,11 @@
 require_once 'Pdbg/Observable.php';
 
 /**
+ * @see Pdbg_App
+ */
+require_once 'Pdbg/App.php';
+
+/**
  * @see Pdbg_Net_Dbgp_Connection
  */
 require_once 'Pdbg/Net/Dbgp/Connection.php';
@@ -56,8 +61,12 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
 
     public function __construct(Pdbg_Net_Dbgp_Connection $conn)
     {
+        parent::__construct();
+
         $this->_conn  = $conn;
         $this->_state = self::AWAITING_INITIAL_RESPONSE;
+
+        Pdbg_App::getInstance()->addObserver('timeout', array($this, 'run'));
     }
 
     public function run()
@@ -72,6 +81,5 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
 
     protected function _runAwaitingInitialResponse($response)
     {
-        $this->fire('initialResponse');
     }
 }
