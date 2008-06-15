@@ -114,4 +114,30 @@ class Pdbg_ObservableTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals('->', $result);
     }
+
+    /**
+     * Test to ensure that an exception is thrown when attempting to add
+     * an observer to a event that is not registered.
+     *
+     * @return void
+     * @expectedException Pdbg_Exception
+     */
+    public function testAddObserverInvalid()
+    {
+        $observable = new Pdbg_Observable();
+        $observable->addObserver('foo', create_function('', ''));
+    }
+
+    /**
+     * Test to ensure that an exception is thrown when an invalid event is
+     * fired.
+     *
+     * @return void
+     * @expectedException Pdbg_Exception
+     */
+    public function testFireInvalid()
+    {
+        $observable = new Pdbg_Observable();
+        $observable->fire('foo');
+    }
 }
