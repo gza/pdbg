@@ -1,6 +1,6 @@
 <?php
 require_once 'bootstrap.php';
-require_once 'Pdbg/Application/Cli.php';
+require_once 'Pdbg/App/Cli.php';
 
-$app = new Pdbg_Application_Cli();
+$app = new Pdbg_App_Cli();
 $app->run();

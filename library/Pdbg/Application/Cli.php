@@ -41,8 +41,11 @@ require_once 'Pdbg/Net/Dbgp/Connection/Listener.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Application_Cli
+class Pdbg_App_Cli
 {
+    /**
+     * @var Pdbg_Net_Dbgp_Connection
+     */
     protected $_conn;
 
     public function readlineCallback($line)
