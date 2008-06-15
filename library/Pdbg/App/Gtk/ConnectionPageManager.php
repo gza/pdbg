@@ -26,7 +26,12 @@
  */
 
 /**
- * Manages the main ui notebook pages. 
+ * @see Pdbg_App_Gtk_ConnectionPage
+ */
+require_once 'Pdbg/App/Gtk/ConnectionPage.php';
+
+/**
+ * Manages the main ui notebook pages. This class is a singleton.
  *
  * @category   Development
  * @package    Pdbg
@@ -62,16 +67,23 @@ class Pdbg_App_Gtk_ConnectionPageManager
     {
     }
 
-    protected static function getInstance()
+    /**
+     * Returns the singleton instance of this class.
+     *
+     * @return Pdbg_App_Gtk_ConnectionPageManager
+     */
+    public static function getInstance()
     {
-        if (null === $this->_singleton) {
-            $this->_singleton = new Pdbg_App_Gtk_ConnectionPageManager();
+        if (null === self::$_singleton) {
+            self::$_singleton = new Pdbg_App_Gtk_ConnectionPageManager();
         }
 
-        return $this->_singleton;
+        return self::$_singleton;
     }
 
     /**
+     * Sets the notebook widget that should contain the connection pages.
+     *
      * @param GtkNotebook $notebook
      * @return void
      */
@@ -81,6 +93,8 @@ class Pdbg_App_Gtk_ConnectionPageManager
     }
 
     /**
+     * Returns the notebook widget containing the connection pages.
+     *
      * @return GtkNotebook
      */
     public function getNotebook()
@@ -89,10 +103,14 @@ class Pdbg_App_Gtk_ConnectionPageManager
     }
 
     /**
-     * 
+     *  Adds a new connection page to the notebook.
+     *
+     *  @param Pdbg_Net_Dbgp_Connection $conn
+     *  @return void
      */
     public function addPageForConnection(Pdbg_Net_Dbgp_Connection $conn)
     {
-        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPage($conn);
+        $mgr = new Pdbg_App_ConnectionManager($conn);
+        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPage($mgr);
     }
 }

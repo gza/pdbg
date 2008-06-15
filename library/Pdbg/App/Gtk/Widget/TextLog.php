@@ -26,7 +26,7 @@
  */
 
 /**
- * Represents a debugger engine response.
+ * 
  *
  * @category   Development
  * @package    Pdbg
@@ -36,27 +36,39 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_EngineResponse
+class Pdbg_App_Gtk_Widget_TextLog extends GtkScrolledWindow
 {
-    /**
-     * @var DOMDocument
-     */
-    protected $_doc;
+    protected $_textView;
 
-    public function __construct($xmlData)
+    protected $_textBuf;
+
+    public function __construct()
     {
-        $this->_doc = new DOMDocument();
-        $this->_doc->loadXML($xmlData);
-        $this->_doc->formatOutput = true;
+        parent::__construct();
+
+        $this->_textView = new GtkTextView();
+        $this->_textBuf  = new GtkTextBuffer();
+
+        $this->_textView->set_buffer($this->_textBuf);
+        $this->_textView->set_editable(false);
+        $this->_textView->set_cursor_visible(false);
+
+        $this->add($this->_textView);
     }
 
-    public function getDocument()
+    public function getTextView()
     {
-        return $this->_doc;
+        return $this->_textView;
     }
 
-    public function getXml()
+    public function getTextBuffer()
     {
-        return $this->_doc->saveXML();
+        return $this->_textBuffer;
+    }
+
+    public function appendText($text)
+    {
+        $this->_textBuf->place_cursor($this->_textBuf->get_end_iter());
+        $this->_textBuf->insert_at_cursor($text);
     }
 }

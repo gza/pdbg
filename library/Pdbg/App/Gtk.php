@@ -105,8 +105,8 @@ class Pdbg_App_Gtk
 
         $this->_mainWin->add($this->_mainNotebook);
 
-        Pdbg_App_Gtk_ConnectionPageManager::getInstance()
-            ->setNotebook($this->_mainNotebook);
+        $mgr = Pdbg_App_Gtk_ConnectionPageManager::getInstance();
+        $mgr->setNotebook($this->_mainNotebook);
     }
 
     /**
