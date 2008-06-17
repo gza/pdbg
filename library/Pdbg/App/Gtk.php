@@ -92,10 +92,10 @@ class Pdbg_App_Gtk extends Pdbg_App
      */
     protected function _initApp()
     {
+        $this->addEvent('timeout')->addEvent('new-connection');
+
         $this->_listener     = new Pdbg_Net_Dbgp_Connection_Listener();
         $this->_connPagesMgr = new Pdbg_App_Gtk_ConnectionPagesManager();
-
-        $this->addEvent('timeout')->addEvent('new-connection');
 
         Gtk::timeout_add(500, array($this, 'onTimeout'));
     }

@@ -90,7 +90,9 @@ class Pdbg_Observable
      */
     public function fire($eventName, $args = array())
     {
-        $args = (array) $args;
+        if (!is_array($args)) {
+            $args = array($args);
+        }
 
         if (!array_key_exists($eventName, $this->_events)) {
             throw new Pdbg_Exception("unknown event: {$eventName}");
