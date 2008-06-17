@@ -44,6 +44,21 @@ require_once 'Pdbg/Net/Dbgp/IdeCommand.php';
 class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
 {
     /**
+     * Test to ensure that the transaction id functionality works as expected.
+     *
+     * @return void
+     */
+    public function testTransactionId()
+    {
+        $command1 = new Pdbg_Net_Dbgp_IdeCommand('status');
+        $command2 = new Pdbg_Net_Dbgp_IdeCommand('status');
+
+        $this->assertTrue(is_int($command1->getTransactionId()));
+        $this->assertTrue(is_int($command2->getTransactionId()));
+        $this->assertEquals(1, $command2->getTransactionId()-$command1->getTransactionId());
+    }
+
+    /**
      * Test to ensure that a command with no args/no data is built
      * correctly.
      *
@@ -53,7 +68,7 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status');
 
-        $this->assertEquals("status\x00", $command->build());
+        $this->assertEquals("status -i {$command->getTransactionId()}\x00", $command->build());
     }
 
     /**
@@ -64,9 +79,9 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
      */
     public function testOneArg()
     {
-        $command = new Pdbg_Net_Dbgp_IdeCommand('status', array('-i' => '1'));
+        $command = new Pdbg_Net_Dbgp_IdeCommand('status', array('-a' => 'a'));
 
-        $this->assertEquals("status -i 1\x00", $command->build());
+        $this->assertEquals("status -a a -i {$command->getTransactionId()}\x00", $command->build());
     }
 
     /**
@@ -83,7 +98,7 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
             '-c' => 'foo'
         ));
 
-        $this->assertEquals("status -a hello -b world -c foo\x00", $command->build());
+        $this->assertEquals("status -a hello -b world -c foo -i {$command->getTransactionId()}\x00", $command->build());
     }
 
     /**
@@ -101,7 +116,7 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
 
         $b64 = base64_encode('xyzzy');
 
-        $this->assertEquals("status -a A -b B -- $b64\x00", $command->build());
+        $this->assertEquals("status -a A -b B -i {$command->getTransactionId()} -- $b64\x00", $command->build());
     }
 
     /**
@@ -116,7 +131,7 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
 
         $b64 = base64_encode('xyzzy');
 
-        $this->assertEquals("status -- $b64\x00", $command->build());
+        $this->assertEquals("status -i {$command->getTransactionId()} -- $b64\x00", $command->build());
     }
 
     /**
@@ -127,6 +142,6 @@ class Pdbg_Net_Dbgp_IdeCommandTest extends PHPUnit_Framework_TestCase
     public function testToString()
     {
         $command = new Pdbg_Net_Dbgp_IdeCommand('status');
-        $this->assertEquals("status\x00", (string) $command);
+        $this->assertEquals("status -i {$command->getTransactionId()}\x00", (string) $command);
     }
 }

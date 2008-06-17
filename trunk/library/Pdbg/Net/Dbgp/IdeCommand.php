@@ -39,6 +39,11 @@
 class Pdbg_Net_Dbgp_IdeCommand
 {
     /**
+     * @var integer
+     */
+    protected static $_nextTransId = 1;
+
+    /**
      * @var string
      */
     protected $_name = '';
@@ -54,6 +59,11 @@ class Pdbg_Net_Dbgp_IdeCommand
     protected $_data = '';
 
     /**
+     * @var integer
+     */
+    protected $_transId;
+
+    /**
      * Constructs an instance.
      *
      * @param string $name The name of the command
@@ -63,9 +73,22 @@ class Pdbg_Net_Dbgp_IdeCommand
      */
     public function __construct($name, array $arguments = array(), $data = null)
     {
-        $this->_name = $name;
+        $this->_name      = $name;
         $this->_arguments = $arguments;
-        $this->_data = $data;
+        $this->_data      = $data;
+        $this->_transId   = self::$_nextTransId++;
+
+        $this->_arguments['-i'] = $this->_transId;
+    }
+
+    /**
+     * Returns the command transaction id.
+     *
+     * @return integer
+     */
+    public function getTransactionId()
+    {
+        return $this->_transId;
     }
 
     /**
