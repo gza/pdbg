@@ -53,12 +53,31 @@ require_once 'Pdbg/Net/Dbgp/Connection.php';
  */
 class Pdbg_App_ConnectionManager extends Pdbg_Observable
 {
+    /**
+     * Connection state constants.
+     */
     const AWAITING_INITIAL_RESPONSE = 'AwaitingInitialResponse';
 
+    /**
+     * The connection managed by this manager.
+     *
+     * @var Pdbg_Net_Dbgp_Connection
+     */
     protected $_conn;
 
+    /**
+     * Value equals one of the connection state constants.
+     *
+     * @var string
+     */
     protected $_state;
 
+    /**
+     * Constructs an instance.
+     *
+     * @param Pdbg_Net_Dbgp_Connection $conn
+     * @return void
+     */
     public function __construct(Pdbg_Net_Dbgp_Connection $conn)
     {
         parent::__construct();
@@ -66,19 +85,30 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         $this->_conn  = $conn;
         $this->_state = self::AWAITING_INITIAL_RESPONSE;
 
-        Pdbg_App::getInstance()->addObserver('timeout', array($this, 'run'));
+        Pdbg_App::getInstance()->addObserver('timeout', array($this, 'onTimeout'));
+
+        $this->addEvent('response-read');
     }
 
-    public function run()
+    /**
+     * Processes responses and sends commands.
+     *
+     * @return void
+     */
+    public function onTimeout()
     {
         if (null === ($response = $this->_conn->readResponse())) {
             // nothing to do, return ...
             return;
         }
 
+        $this->fire('response-read', $response);
         $this->{'_run' . $this->_state}($response);
     }
 
+    /**
+     *
+     */
     protected function _runAwaitingInitialResponse($response)
     {
     }

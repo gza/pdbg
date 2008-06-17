@@ -26,7 +26,12 @@
  */
 
 /**
- * 
+ * @see Pdbg_Observable
+ */
+require_once 'Pdbg/Observable.php';
+
+/**
+ * Base class for the main application classes.
  *
  * @category   Development
  * @package    Pdbg
@@ -36,27 +41,24 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_Widget_TextLog extends GtkTextView
+abstract class Pdbg_App extends Pdbg_Observable
 {
+    protected static $_app = null;
+
     public function __construct()
     {
-        parent::__construct();
-
-        $buffer = new GtkTextBuffer();
-
-        $this->set_buffer($buffer);
-        $this->set_editable(false);
-        $this->set_cursor_visible(false);
+        self::$_app = $this;
     }
 
-    public function log($type, $text)
+    /**
+     * Returns the main application class.
+     *
+     * @return Pdbg_App
+     */
+    public static function getInstance()
     {
-        $time   = date('h:i:s A');
-        $prefix = "[$time $type] ";
-        $text   = preg_replace('/^/m', $prefix, $text);
-
-        $buffer = $this->get_buffer();
-        $buffer->place_cursor($buffer->get_end_iter());
-        $buffer->insert_at_cursor($text);
+        return self::$_app;
     }
+
+    abstract public function run();
 }

@@ -31,17 +31,22 @@
 require_once 'Pdbg/Observable.php';
 
 /**
- * @see Pdbg_App_ConnectionManager
+ * @see Pdbg_Net_Dbgp_Connection
  */
-require_once 'Pdbg/App/ConnectionManager.php';
+require_once 'Pdbg/Net/Dbgp/Connection.php';
 
 /**
- * @see Pdbg_App_Gtk_ConnectionPageManager
+ * @see Pdbg_App_Gtk_Widget_TextLog
  */
-require_once 'Pdbg/App/Gtk/ConnectionPageManager.php';
+require_once 'Pdbg/App/Gtk/Widget/TextLog.php';
 
 /**
- * Manages the main ui notebook pages. This class is a singleton.
+ * @see Pdbg_App_Gtk_Widget_SourceView
+ */
+require_once 'Pdbg/App/Gtk/Widget/SourceView.php';
+
+/**
+ * Manages the ui of a single connection page.
  *
  * @category   Development
  * @package    Pdbg
@@ -51,32 +56,79 @@ require_once 'Pdbg/App/Gtk/ConnectionPageManager.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
+class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
 {
     /**
-     * @var array
+     * @var Pdbg_App_ConnectionManager
      */
-    protected $_connPages = array();
+    protected $_connMgr;
 
     /**
-     * Constructs an instance.
-     *
-     * @param void
+     * @var Pdbg_App_Gtk_Widget_TextLog
      */
-    public function __construct()
+    protected $_commTextLog;
+
+    /**
+     *
+     */
+    public function __construct(Pdbg_App_ConnectionManager $connMgr)
     {
-        Pdbg_App::getInstance()->addObserver('new-connection', 
-            array($this, 'onNewConnection'));
+        parent::__construct();
+
+        $this->_connMgr = $connMgr;
+        $this->_initApp();
+        $this->_initGui();
     }
 
     /**
      *
-     *  @param Pdbg_Net_Dbgp_Connection $conn
-     *  @return void
      */
-    public function onNewConnection(Pdbg_Net_Dbgp_Connection $conn)
+    protected function _initApp()
     {
-        $mgr = new Pdbg_App_ConnectionManager($conn);
-        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPageManager($mgr);
+        $this->_connMgr->addObserver('response-read', 
+            array($this, 'onResponseRead'));
+    }
+
+    /**
+     *
+     */
+    protected function _initGui()
+    {
+        $this->_commTextLog = new Pdbg_App_Gtk_Widget_TextLog();
+
+        $logScroll = new GtkScrolledWindow();
+        $logScroll->add($this->_commTextLog);
+
+        $propNotebook = new GtkNotebook();
+        $propNotebook->set_tab_pos(Gtk::POS_BOTTOM);
+        $propNotebook->append_page($logScroll, new GtkLabel('Communications'));
+
+        $sourceView   = new Pdbg_App_Gtk_Widget_SourceView();
+        $sourceScroll = new GtkScrolledWindow();
+        $sourceScroll->add($sourceView);
+
+        $sourceFrame = new GtkFrame();
+        $sourceFrame->add($sourceScroll);
+        $sourceFrame->set_shadow_type(Gtk::SHADOW_IN);
+
+        $sourceSplit = new GtkVPaned();
+        $sourceSplit->add1($sourceFrame);
+        $sourceSplit->add2($propNotebook);
+
+        $fileSplit = new GtkHPaned();
+        $fileSplit->add1(new GtkLabel('Files'));
+        $fileSplit->add2($sourceSplit);
+
+        $mainNotebook = Pdbg_App::getInstance()->getMainNotebook();
+        $mainNotebook->append_page($fileSplit);
+        $mainNotebook->show_all();
+    }
+
+    /**
+     *
+     */
+    public function onResponseRead(Pdbg_Net_Dbgp_EngineResponse $response)
+    {
+        $this->_commTextLog->log('IN', $response->getXml());
     }
 }

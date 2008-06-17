@@ -31,17 +31,17 @@
 require_once 'Pdbg/Observable.php';
 
 /**
- * @see Pdbg_Net_Dbgp_Connection
+ * @see Pdbg_App_ConnectionManager
  */
-require_once 'Pdbg/Net/Dbgp/Connection.php';
+require_once 'Pdbg/App/ConnectionManager.php';
 
 /**
- * @see Pdbg_App_Gtk_Widget_TextLog
+ * @see Pdbg_App_Gtk_ConnectionPageManager
  */
-require_once 'Pdbg/App/Gtk/Widget/TextLog.php';
+require_once 'Pdbg/App/Gtk/ConnectionPageManager.php';
 
 /**
- * Manages the ui of a single connection page.
+ * Manages the main ui notebook pages. This class is a singleton.
  *
  * @category   Development
  * @package    Pdbg
@@ -51,51 +51,32 @@ require_once 'Pdbg/App/Gtk/Widget/TextLog.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_ConnectionPage extends Pdbg_Observable
+class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
 {
     /**
-     * @var Pdbg_App_ConnectionManager
+     * @var array
      */
-    protected $_connMgr;
+    protected $_connPages = array();
 
     /**
-     * @var Pdbg_App_Gtk_Widget_TextLog
-     */
-    protected $_commTextLog;
-
-    /**
+     * Constructs an instance.
      *
+     * @param void
      */
-    public function __construct(Pdbg_App_ConnectionManager $connMgr)
+    public function __construct()
     {
-        parent::__construct();
-
-        $this->_connMgr = $connMgr;
-        $this->_initGui();
+        Pdbg_App::getInstance()->addObserver('new-connection', 
+            array($this, 'onNewConnection'));
     }
 
     /**
      *
+     *  @param Pdbg_Net_Dbgp_Connection $conn
+     *  @return void
      */
-    protected function _initGui()
+    public function onNewConnection(Pdbg_Net_Dbgp_Connection $conn)
     {
-        $this->_commTextLog = new Pdbg_App_Gtk_Widget_TextLog();
-
-        $propNotebook = new GtkNotebook();
-        $propNotebook->set_tab_pos(Gtk::POS_BOTTOM);
-        $propNotebook->append_page($this->_commTextLog, new GtkLabel('Communications'));
-
-        $sourceSplit = new GtkVPaned();
-        $sourceSplit->add1(new GtkLabel('Source'));
-        $sourceSplit->add2($propNotebook);
-
-        $fileSplit = new GtkHPaned();
-        $fileSplit->add1(new GtkLabel('Files'));
-        $fileSplit->add2($sourceSplit);
-
-        $connPgMgr = Pdbg_App_Gtk_ConnectionPageManager::getInstance();
-        $mainNotebook = $connPgMgr->getNotebook();
-        $mainNotebook->append_page($fileSplit);
-        $mainNotebook->show_all();
+        $mgr = new Pdbg_App_ConnectionManager($conn);
+        $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPageManager($mgr);
     }
 }

@@ -26,7 +26,7 @@
  */
 
 /**
- * 
+ * Constructs a GtkSourceView object configured as needed for this app.
  *
  * @category   Development
  * @package    Pdbg
@@ -36,27 +36,27 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_Widget_TextLog extends GtkTextView
+class Pdbg_App_Gtk_Widget_SourceView extends GtkSourceView
 {
+    /**
+     * Constructs an instance.
+     *
+     * @return void
+     */
     public function __construct()
     {
         parent::__construct();
 
-        $buffer = new GtkTextBuffer();
+        $langMgr = new GtkSourceLanguagesManager();
+        $phpLang = $langMgr->get_language_from_mime_type('application/x-php');
+        $buffer  = GtkSourceBuffer::new_with_language($phpLang);
 
-        $this->set_buffer($buffer);
+        $buffer->set_text("<?php\r\n\$x = 1;\r\necho \$x;\r\n?>");
+        $buffer->set_highlight(true);
+
+        $this->set_show_line_numbers(true);
         $this->set_editable(false);
         $this->set_cursor_visible(false);
-    }
-
-    public function log($type, $text)
-    {
-        $time   = date('h:i:s A');
-        $prefix = "[$time $type] ";
-        $text   = preg_replace('/^/m', $prefix, $text);
-
-        $buffer = $this->get_buffer();
-        $buffer->place_cursor($buffer->get_end_iter());
-        $buffer->insert_at_cursor($text);
+        $this->set_buffer($buffer);
     }
 }
