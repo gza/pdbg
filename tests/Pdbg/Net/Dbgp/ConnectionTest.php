@@ -66,7 +66,7 @@ class Pdbg_Net_Dbgp_ConnectionTest extends PHPUnit_Framework_TestCase
 
         $conn->writeCommand($cmd);
 
-        $this->assertEquals("status\x00", $socket->getDataWritten());
+        $this->assertEquals("status -i {$cmd->getTransactionId()}\x00", $socket->getDataWritten());
     }
 
     /**
