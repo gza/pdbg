@@ -26,12 +26,17 @@
  */
 
 /**
- * @see Pdbg_Net_Exception
+ * @see Pdbg_Net_Dbgp_EngineResponse_Exception
  */
-require_once 'Pdbg/Net/Exception.php';
+require_once 'Pdbg/Net/Dbgp/EngineResponse/Exception.php';
 
 /**
- * The package exception class.
+ * @see Pdbg_Net_Dbgp_EngineResponse_Source
+ */
+require_once 'Pdbg/Net/Dbgp/EngineResponse/Source.php';
+
+/**
+ * 
  *
  * @category   Development
  * @package    Pdbg
@@ -41,6 +46,31 @@ require_once 'Pdbg/Net/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_Exception extends Pdbg_Net_Exception
+class Pdbg_Net_Dbgp_EngineResponse_Factory
 {
+    /**
+     * Instantiates an engine response of the appropriate type based upon
+     * the supplied XML.
+     *
+     * @param string $xml
+     * @return Pdbg_Net_Dbgp_EngineResponse
+     */
+    public static function instantiate($xml)
+    {
+        $doc = new DOMDocument();
+        $doc->loadXML($xml);
+
+        if (!Pdbg_Net_Dbgp_EngineResponse::commandSuccessfulFromDocument($doc)) {
+            return new Pdbg_Net_Dbgp_EngineResponse($doc);
+        }
+
+        $command = Pdbg_Net_Dbgp_EngineResponse::getCommandFromDocument($doc);
+
+        switch ($command) {
+            case 'source':
+                return new Pdbg_Net_Dbgp_EngineResponse_Source($doc);
+            default:
+                return new Pdbg_Net_Dbgp_EngineResponse($doc);
+        }
+    }
 }

@@ -31,7 +31,7 @@
 require_once 'Pdbg/Net/Dbgp/IdeCommand.php';
 
 /**
- * Tests for Pdbg_Net_Socket
+ * Tests for Pdbg_Net_Dbgp_IdeCommand
  *
  * @category   Development
  * @package    Pdbg

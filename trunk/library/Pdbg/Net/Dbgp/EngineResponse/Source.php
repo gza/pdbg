@@ -26,12 +26,17 @@
  */
 
 /**
- * @see Pdbg_Net_Exception
+ * @see Pdbg_Net_Dbgp_EngineResponse
  */
-require_once 'Pdbg/Net/Exception.php';
+require_once 'Pdbg/Net/Dbgp/EngineResponse.php';
 
 /**
- * The package exception class.
+ * @see Pdbg_Net_Dbgp_EngineResponse_Exception
+ */
+require_once 'Pdbg/Net/Dbgp/EngineResponse/Exception.php';
+
+/**
+ * Represents a debugger engine response to the source command.
  *
  * @category   Development
  * @package    Pdbg
@@ -41,6 +46,19 @@ require_once 'Pdbg/Net/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_Exception extends Pdbg_Net_Exception
+class Pdbg_Net_Dbgp_EngineResponse_Source extends Pdbg_Net_Dbgp_EngineResponse
 {
+    /**
+     * Returns the source code in the response body.
+     *
+     * @return string
+     */
+    public function getSource()
+    {
+        if (!$this->commandSuccessful()) {
+            throw new Pdbg_Net_Dbgp_EngineResponse_Exception("command must be successful");
+        } else {
+            return base64_decode($this->_doc->documentElement->nodeValue); 
+        }
+    }
 }

@@ -26,12 +26,12 @@
  */
 
 /**
- * @see Pdbg_Net_Exception
+ * @see Pdbg_Net_Dbgp_EngineResponse
  */
-require_once 'Pdbg/Net/Exception.php';
+require_once 'Pdbg/Net/Dbgp/EngineResponse.php';
 
 /**
- * The package exception class.
+ * Tests for Pdbg_Net_Dbgp_EngineResponse
  *
  * @category   Development
  * @package    Pdbg
@@ -41,6 +41,22 @@ require_once 'Pdbg/Net/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_Exception extends Pdbg_Net_Exception
+class Pdbg_Net_Dbgp_EngineResponseTest extends PHPUnit_Framework_TestCase
 {
+    public function testConstruct()
+    {
+        $xml  = '<?xml version="1.0"?><x></x>';
+        $resp = new Pdbg_Net_Dbgp_EngineResponse($xml);
+
+        $this->assertEquals('x', $resp->getDocument()->documentElement->nodeName);
+    }
+
+    public function testGetXml()
+    {
+        $xml  = '<?xml version="1.0"?><x></x>';
+        $resp = new Pdbg_Net_Dbgp_EngineResponse($xml);
+        $out  = $resp->getXml();
+
+        $this->assertRegExp('/^<\?xml/', $out);
+    }
 }

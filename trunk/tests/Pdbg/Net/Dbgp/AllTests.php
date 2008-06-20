@@ -36,8 +36,9 @@ require_once 'PHPUnit/TextUI/TestRunner.php';
 
 require_once 'Pdbg/Net/Dbgp/EngineResponse/AllTests.php';
 
-require_once 'Pdbg/Net/Dbgp/IdeCommandTest.php';
 require_once 'Pdbg/Net/Dbgp/ConnectionTest.php';
+require_once 'Pdbg/Net/Dbgp/EngineResponseTest.php';
+require_once 'Pdbg/Net/Dbgp/IdeCommandTest.php';
 
 /**
  * AllTests
@@ -63,8 +64,9 @@ class Pdbg_Net_Dbgp_AllTests
 
         $suite->addTest(Pdbg_Net_Dbgp_EngineResponse_AllTests::suite());
 
-        $suite->addTestSuite('Pdbg_Net_Dbgp_IdeCommandTest');
         $suite->addTestSuite('Pdbg_Net_Dbgp_ConnectionTest');
+        $suite->addTestSuite('Pdbg_Net_Dbgp_EngineResponseTest');
+        $suite->addTestSuite('Pdbg_Net_Dbgp_IdeCommandTest');
  
         return $suite;
     }   
