@@ -26,12 +26,17 @@
  */
 
 /**
+ * @see Pdbg_Net_Dbgp_EngineResponse
+ */
+require_once 'Pdbg/Net/Dbgp/EngineResponse.php';
+
+/**
  * @see Pdbg_Net_Dbgp_EngineResponse_Exception
  */
 require_once 'Pdbg/Net/Dbgp/EngineResponse/Exception.php';
 
 /**
- * 
+ * Represents a debugger engine init response.
  *
  * @category   Development
  * @package    Pdbg
@@ -41,54 +46,41 @@ require_once 'Pdbg/Net/Dbgp/EngineResponse/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_Net_Dbgp_EngineResponse_Factory
+class Pdbg_Net_Dbgp_EngineResponse_Init extends Pdbg_Net_Dbgp_EngineResponse
 {
     /**
-     * Instantiates an engine response of the appropriate type based upon
-     * the supplied XML.
+     * Returns the uri of the script being debugged.
      *
-     * @param string $xml
-     * @return Pdbg_Net_Dbgp_EngineResponse
+     * @return string
      */
-    public static function instantiate($xml)
+    public function getFileUri()
     {
-        $doc = new DOMDocument();
-        $doc->loadXML($xml);
-
-        // the initial response is a special case and must be handled specially.
-        if ($doc->documentElement->nodeName == 'init') {
-            return self::_instantiateClass('init', $doc);
-        }
-
-        if (!Pdbg_Net_Dbgp_EngineResponse::commandSuccessfulFromDocument($doc)) {
-            return new Pdbg_Net_Dbgp_EngineResponse($doc);
-        }
-
-        $command = Pdbg_Net_Dbgp_EngineResponse::getCommandFromDocument($doc);
-
-        switch ($command) {
-            case 'source':
-                return self::_instantiateClass($command, $doc);
-            default:
-                return new Pdbg_Net_Dbgp_EngineResponse($doc);
-        }
+        return $this->_doc->documentElement->getAttribute('fileuri');
     }
 
     /**
-     * A simple response class loader and instantiator.
+     * Returns information about the debugger engine, if present. This method
+     * returns an array with two elements. The first is the engine name, if
+     * present. The second is the engine version, if present.
      *
-     * @param string $type
+     * @return array
      */
-    protected static function _instantiateClass($type, $doc)
+    public function getEngineInfo()
     {
-        $capType   = ucfirst($type);
-        $className = "Pdbg_Net_Dbgp_EngineResponse_{$capType}";
-        $path      = str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
+        $root = $this->_doc->documentElement;
+        $list = $root->getElementsByTagName('engine');
 
-        if (!class_exists($className)) {
-            require_once $path;
+        if ($list->length > 0) {
+            $engine  = $list->item(0);
+            $version = '';
+
+            if ($engine->hasAttribute('version')) {
+                $version = $engine->getAttribute('version');
+            }
+
+            return array($engine->nodeValue, $version);
+        } else {
+            return array(null, null);
         }
-
-        return new $className($doc);
     }
 }

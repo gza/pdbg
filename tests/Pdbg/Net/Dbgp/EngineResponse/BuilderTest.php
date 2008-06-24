@@ -31,7 +31,7 @@
 require_once 'Pdbg/Net/Dbgp/EngineResponse/Builder.php';
 
 /**
- * Tests for Pdbg_Net_Socket
+ * Tests for Pdbg_Net_Dbgp_EngineResponse_Builder
  *
  * @category   Development
  * @package    Pdbg

@@ -26,7 +26,12 @@
  */
 
 /**
- * Constructs a GtkSourceView object configured as needed for this app.
+ * @see Pdbg_App_Exception
+ */
+require_once 'Pdbg/App/Exception.php';
+
+/**
+ * The package exception class.
  *
  * @category   Development
  * @package    Pdbg
@@ -36,42 +41,6 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_Widget_SourceView extends GtkSourceView
+class Pdbg_App_Exception extends Pdbg_Exception
 {
-    /**
-     * Constructs an instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-
-        $langMgr = new GtkSourceLanguagesManager();
-        $phpLang = $langMgr->get_language_from_mime_type('application/x-php');
-        $buffer  = GtkSourceBuffer::new_with_language($phpLang);
-
-        $buffer->set_highlight(true);
-
-        $this->set_show_line_numbers(true);
-        $this->set_editable(false);
-        $this->set_cursor_visible(false);
-        $this->set_buffer($buffer);
-
-        $this->_setFont();
-    }
-
-    /**
-     * Sets up the control's font.
-     * TODO: fix me!
-     *
-     * @return void
-     */
-    protected function _setFont()
-    {
-        $desc = new PangoFontDescription();
-        $desc->set_family('Mono');
-
-        $this->modify_font($desc);
-    }
 }

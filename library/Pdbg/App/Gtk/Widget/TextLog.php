@@ -53,10 +53,29 @@ class Pdbg_App_Gtk_Widget_TextLog extends GtkTextView
     {
         $time   = date('h:i:s A');
         $prefix = "[$time $type] ";
+        // Place the prefix at the beginning of each line of text
         $text   = preg_replace('/^/m', $prefix, $text);
+        // Ensure that there is a new line at the end of the text
+        $text   = preg_replace('/[\r\n]*$/', "\r\n", $text);
 
         $buffer = $this->get_buffer();
         $buffer->place_cursor($buffer->get_end_iter());
         $buffer->insert_at_cursor($text);
+
+        $this->_setFont();
+    }
+
+    /**
+     * Sets up the control's font.
+     * TODO: fix me!
+     *
+     * @return void
+     */
+    protected function _setFont()
+    {
+        $desc = new PangoFontDescription();
+        $desc->set_family('Mono');
+
+        $this->modify_font($desc);
     }
 }

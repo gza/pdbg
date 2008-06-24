@@ -36,6 +36,11 @@ require_once 'Pdbg/Observable.php';
 require_once 'Pdbg/App.php';
 
 /**
+ * @see Pdbg_App_Exception
+ */
+require_once 'Pdbg/App/Exception.php';
+
+/**
  * @see Pdbg_Net_Dbgp_Connection
  */
 require_once 'Pdbg/Net/Dbgp/Connection.php';
@@ -56,7 +61,8 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
     /**
      * Connection state constants.
      */
-    const AWAITING_INITIAL_RESPONSE = 'AwaitingInitialResponse';
+    const AWAITING_INIT     = 'AwaitingInit';
+    const AWAITING_INIT_SRC = 'AwaitingInitSrc';
 
     /**
      * The connection managed by this manager.
@@ -83,11 +89,14 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         parent::__construct();
 
         $this->_conn  = $conn;
-        $this->_state = self::AWAITING_INITIAL_RESPONSE;
+        $this->_state = self::AWAITING_INIT;
 
         Pdbg_App::getInstance()->addObserver('timeout', array($this, 'onTimeout'));
 
-        $this->addEvent('response-read');
+        $this->addEvent('response-read')
+             ->addEvent('command-written')
+             ->addEvent('init-packet')
+             ->addEvent('init-source');
     }
 
     /**
@@ -103,13 +112,46 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         }
 
         $this->fire('response-read', $response);
+
         $this->{'_run' . $this->_state}($response);
     }
 
     /**
      *
      */
-    protected function _runAwaitingInitialResponse($response)
+    protected function _runAwaitingInit($response)
     {
+        if (!($response instanceof Pdbg_Net_Dbgp_EngineResponse_Init)) {
+            throw new Pdbg_App_Exception("expected init response");
+        }
+
+        // read the remote ip address and port.
+        $sh = $this->_conn->getSocket()->getHandle();
+        socket_getpeername($sh, $ipAddress, $port);
+
+        $this->fire('init-packet', array($response, $ipAddress, $port));
+
+        $cmd = $this->_conn->writeCommand('source', array(
+            '-f' => $response->getFileUri()
+        ));
+
+        $this->fire('command-written', $cmd);
+
+        $this->_state = self::AWAITING_INIT_SRC;
+    }
+
+    /**
+     *
+     */
+    protected function _runAwaitingInitSrc($response)
+    {
+        if (!$response->commandSuccessful()) {
+            throw new Pdbg_App_Exception("initial source command must be successful");
+        }
+        if (!($response instanceof Pdbg_Net_Dbgp_EngineResponse_Source)) {
+            throw new Pdbg_App_Exception("expected source response");
+        }
+
+        $this->fire('init-source', $response);
     }
 }

@@ -96,7 +96,7 @@ class Pdbg_Net_Dbgp_IdeCommand
      *
      * @return string
      */
-    public function build()
+    public function build($appendNull = true)
     {
         $argStr = '';
 
@@ -110,7 +110,9 @@ class Pdbg_Net_Dbgp_IdeCommand
             $cmdLine .= ' -- ' . base64_encode($this->_data);
         }
 
-        $cmdLine .= "\x00";
+        if ($appendNull) {
+            $cmdLine .= "\x00";
+        }
 
         return $cmdLine;
     }

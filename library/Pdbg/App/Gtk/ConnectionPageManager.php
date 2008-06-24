@@ -21,7 +21,7 @@
  * @author     Christopher Utz <cutz@chrisutz.com>
  * @copyright  2008 Christopher Utz <cutz@chrisutz.com>
  * @license    http://www.gnu.org/licenses/gpl.html GPLv3
- * @version    SVN: $Id$
+ * @version    SVN: $Id: ConnectionPage.php 13 2008-06-15 18:46:01Z baron314159@yahoo.com $
  * @link       http://pdbg.googlecode.com
  */
 
@@ -53,7 +53,7 @@ require_once 'Pdbg/App/Gtk/Widget/SourceView.php';
  * @author     Christopher Utz <cutz@chrisutz.com>
  * @copyright  2008 Christopher Utz <cutz@chrisutz.com>
  * @license    http://www.gnu.org/licenses/gpl.html GPLv3
- * @version    SVN: $Id$
+ * @version    SVN: $Id: ConnectionPage.php 13 2008-06-15 18:46:01Z baron314159@yahoo.com $
  * @link       http://pdbg.googlecode.com
  */
 class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
@@ -67,6 +67,31 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
      * @var Pdbg_App_Gtk_Widget_TextLog
      */
     protected $_commTextLog;
+
+    /**
+     * @var Pdbg_App_Gtk_Widget_SourceView
+     */
+    protected $_sourceView;
+
+    /**
+     * @var GtkVPaned
+     */
+    protected $_sourceSplit;
+
+    /**
+     * @var GtkHPaned
+     */
+    protected $_fileSplit;
+
+    /**
+     * @var GtkLabel
+     */
+    protected $_tabLabel;
+
+    /**
+     * @var integer
+     */
+    protected $_pageIndex;
 
     /**
      *
@@ -87,6 +112,12 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     {
         $this->_connMgr->addObserver('response-read', 
             array($this, 'onResponseRead'));
+        $this->_connMgr->addObserver('command-written',
+            array($this, 'onCommandWritten'));
+        $this->_connMgr->addObserver('init-packet',
+            array($this, 'onInitPacket'));
+        $this->_connMgr->addObserver('init-source',
+            array($this, 'onInitSource'));
     }
 
     /**
@@ -103,32 +134,81 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
         $propNotebook->set_tab_pos(Gtk::POS_BOTTOM);
         $propNotebook->append_page($logScroll, new GtkLabel('Communications'));
 
-        $sourceView   = new Pdbg_App_Gtk_Widget_SourceView();
+        $this->_sourceView = new Pdbg_App_Gtk_Widget_SourceView();
+
         $sourceScroll = new GtkScrolledWindow();
-        $sourceScroll->add($sourceView);
+        $sourceScroll->add($this->_sourceView);
 
         $sourceFrame = new GtkFrame();
         $sourceFrame->add($sourceScroll);
         $sourceFrame->set_shadow_type(Gtk::SHADOW_IN);
 
-        $sourceSplit = new GtkVPaned();
-        $sourceSplit->add1($sourceFrame);
-        $sourceSplit->add2($propNotebook);
+        $this->_sourceSplit = new GtkVPaned();
+        $this->_sourceSplit->pack1($sourceFrame, true, false);
+        $this->_sourceSplit->pack2($propNotebook, false, false);
 
-        $fileSplit = new GtkHPaned();
-        $fileSplit->add1(new GtkLabel('Files'));
-        $fileSplit->add2($sourceSplit);
+        // Set the minimum requested height to 200px.
+        $propNotebook->set_size_request(-1, 200);
+
+        $this->_fileSplit = new GtkHPaned();
+        $this->_fileSplit->pack1(new GtkLabel('Files'), false, false);
+        $this->_fileSplit->pack2($this->_sourceSplit, true, false);
+
+        $this->_tabLabel = new GtkLabel();
 
         $mainNotebook = Pdbg_App::getInstance()->getMainNotebook();
-        $mainNotebook->append_page($fileSplit);
-        $mainNotebook->show_all();
+        $this->_pageIndex = $mainNotebook->append_page(
+            $this->_fileSplit, $this->_tabLabel);
     }
 
     /**
      *
      */
-    public function onResponseRead(Pdbg_Net_Dbgp_EngineResponse $response)
+    public function onResponseRead($response)
     {
-        $this->_commTextLog->log('IN', $response->getXml());
+        $this->_commTextLog->log('<<', $response->getXml());
+    }
+
+    /**
+     *
+     */
+    public function onCommandWritten($command)
+    {
+        $this->_commTextLog->log('>>', $command->build(false));
+    }
+
+    /**
+     *
+     */
+    public function onInitPacket($response, $ipAddress, $port)
+    {
+        list($engine, $version) = $response->getEngineInfo();
+        $text = "[$ipAddress]";
+
+        if ($engine) {
+            $text .= ' ' . $engine;
+
+            if ($version) {
+                $text .= ' ' . $version;
+            }
+        }
+
+        $this->_tabLabel->set_text($text);
+    }
+
+    /**
+     *
+     */
+    public function onInitSource($response)
+    {
+        $this->_sourceView->get_buffer()
+                          ->set_text($response->getSource());
+
+        // The initial display of the page is setup, make the tab show up.
+        $this->_fileSplit->show_all();
+
+        // Make the page be on top.
+        $mainNotebook = Pdbg_App::getInstance()->getMainNotebook();
+        $mainNotebook->set_current_page($this->_pageIndex);
     }
 }

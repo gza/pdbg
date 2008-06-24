@@ -31,6 +31,11 @@
 require_once 'Pdbg/Net/Socket.php';
 
 /**
+ * @see Pdbg_Net_Dbgp_IdeCommand
+ */
+require_once 'Pdbg/Net/Dbgp/IdeCommand.php';
+
+/**
  * @see Pdbg_Net_Dbgp_EngineResponse_Builder
  */
 require_once 'Pdbg/Net/Dbgp/EngineResponse/Builder.php';
@@ -82,11 +87,21 @@ class Pdbg_Net_Dbgp_Connection
     /**
      * Writes an DBGp IDE command to the socket.
      *
-     * @return void
+     * @param string|Pdbg_Net_Dbgp_IdeCommand $command
+     * @param array|null $args
+     * @param string|null $data
+     * @return Pdbg_Net_Dbgp_IdeCommand
      */
-    public function writeCommand(Pdbg_Net_Dbgp_IdeCommand $command)
+    public function writeCommand($command, $args = null, $data = null)
     {
-        $this->_socket->writeAll((string) $command);
+        if ($command instanceof Pdbg_Net_Dbgp_IdeCommand) {
+            $this->_socket->writeAll((string) $command);
+            return $command;
+        } else {
+            $obj = new Pdbg_Net_Dbgp_IdeCommand($command, $args, $data);
+            $this->_socket->writeAll((string) $obj);
+            return $obj;
+        }
     }
 
     /**
