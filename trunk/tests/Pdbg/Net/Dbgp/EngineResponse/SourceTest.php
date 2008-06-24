@@ -26,7 +26,12 @@
  */
 
 /**
- * Constructs a GtkSourceView object configured as needed for this app.
+ * @see Pdbg_Net_Dbgp_EngineResponse_Source
+ */
+require_once 'Pdbg/Net/Dbgp/EngineResponse/Source.php';
+
+/**
+ * Tests for Pdbg_Net_Dbgp_EngineResponse_Source
  *
  * @category   Development
  * @package    Pdbg
@@ -36,42 +41,33 @@
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_Widget_SourceView extends GtkSourceView
+class Pdbg_Net_Dbgp_EngineResponse_SourceTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * Constructs an instance.
+     * Test to ensure that the getSource method works as expected.
      *
      * @return void
      */
-    public function __construct()
+    public function testGetSource()
     {
-        parent::__construct();
+        $xml  = '<?xml version="1.0"?><response success="1">Zm9v</response>';
+        $resp = new Pdbg_Net_Dbgp_EngineResponse_Source($xml);
 
-        $langMgr = new GtkSourceLanguagesManager();
-        $phpLang = $langMgr->get_language_from_mime_type('application/x-php');
-        $buffer  = GtkSourceBuffer::new_with_language($phpLang);
-
-        $buffer->set_highlight(true);
-
-        $this->set_show_line_numbers(true);
-        $this->set_editable(false);
-        $this->set_cursor_visible(false);
-        $this->set_buffer($buffer);
-
-        $this->_setFont();
+        $this->assertEquals('foo', $resp->getSource());
     }
 
     /**
-     * Sets up the control's font.
-     * TODO: fix me!
+     * Test to ensure that an exception is thrown when using getSource on an
+     * unsuccessful response.
      *
      * @return void
+     * @expectedException Pdbg_Net_Dbgp_EngineResponse_Exception
      */
-    protected function _setFont()
+    public function testGetSourceNotSuccessful()
     {
-        $desc = new PangoFontDescription();
-        $desc->set_family('Mono');
+        $xml  = '<?xml version="1.0"?><response success="0">Zm9v</response>';
+        $resp = new Pdbg_Net_Dbgp_EngineResponse_Source($xml);
 
-        $this->modify_font($desc);
+        $resp->getSource();
     }
 }

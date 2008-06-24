@@ -31,6 +31,11 @@
 require_once 'Pdbg/Net/Dbgp/EngineResponse.php';
 
 /**
+ * @see Pdbg_Net_Dbgp_EngineResponse_Factory
+ */
+require_once 'Pdbg/Net/Dbgp/EngineResponse/Factory.php';
+
+/**
  * Builds a debugger engine response from a data stream.
  *
  * @category   Development
@@ -128,7 +133,7 @@ class Pdbg_Net_Dbgp_EngineResponse_Builder
     public function getResponse()
     {
         if ($this->_state == self::BUILT) {
-            return new Pdbg_Net_Dbgp_EngineResponse($this->_dataBuffer);
+            return Pdbg_Net_Dbgp_EngineResponse_Factory::instantiate($this->_dataBuffer);
         } else {
             return null;
         }

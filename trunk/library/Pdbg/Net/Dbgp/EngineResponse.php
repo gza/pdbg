@@ -151,12 +151,9 @@ class Pdbg_Net_Dbgp_EngineResponse
      */
     public static function commandSuccessfulFromDocument(DOMDocument $doc)
     {
-        $root = $doc->documentElement;
+        $root   = $doc->documentElement;
+        $errors = $root->getElementsByTagName('error');
 
-        if (!$root->hasAttribute('success')) {
-            return false;
-        } else {
-            return ($root->getAttribute('success') == '1');
-        }
+        return ($errors->length == 0);
     }
 }

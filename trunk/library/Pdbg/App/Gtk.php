@@ -110,7 +110,7 @@ class Pdbg_App_Gtk extends Pdbg_App
         $this->_mainWin->connect_simple('destroy', array('gtk', 'main_quit'));
         $this->_mainWin->set_position(Gtk::WIN_POS_CENTER);
         // TODO: this may need to change ...
-        $this->_mainWin->set_size_request(800, 600);
+        $this->_mainWin->set_default_size(800, 600);
 
         $this->_mainNotebook = new GtkNotebook();
 

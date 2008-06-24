@@ -35,6 +35,7 @@ require_once 'PHPUnit/Framework.php';
 require_once 'PHPUnit/TextUI/TestRunner.php';
 
 require_once 'Pdbg/Net/Dbgp/EngineResponse/BuilderTest.php';
+require_once 'Pdbg/Net/Dbgp/EngineResponse/SourceTest.php';
 
 /**
  * AllTests
@@ -59,6 +60,7 @@ class Pdbg_Net_Dbgp_EngineResponse_AllTests
         $suite = new PHPUnit_Framework_TestSuite('Pdbg');
 
         $suite->addTestSuite('Pdbg_Net_Dbgp_EngineResponse_BuilderTest');
+        $suite->addTestSuite('Pdbg_Net_Dbgp_EngineResponse_SourceTest');
 
         return $suite;
     }   
