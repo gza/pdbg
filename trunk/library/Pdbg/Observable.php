@@ -66,13 +66,21 @@ class Pdbg_Observable
      * Registers a new event type, which observers can bind to via the
      * addObserver method.
      *
-     * @param string $name
+     * @param string|array $name
      * @return Pdbg_Observable
      */
     public function addEvent($name)
     {
-        if (!array_key_exists($name, $this->_events)) {
-            $this->_events[$name] = array();
+        if (is_array($name)) {
+            $names = $name;
+        } else {
+            $names = array($name);
+        }
+
+        foreach ($names as $name) {
+            if (!array_key_exists($name, $this->_events)) {
+                $this->_events[$name] = array();
+            }
         }
 
         return $this;
@@ -108,19 +116,25 @@ class Pdbg_Observable
     /**
      * Adds the observer function $observerFn to the event $eventName.
      *
-     * @param string $eventName
+     * @param string|array $eventName
      * @param mixed $observerFn
      * @return Pdbg_Observable
      * @throws Pdbg_Exception
      */
-    public function addObserver($eventName, $observerFn)
+    public function addObserver($eventName, $observerFn='')
     {
-        if (!array_key_exists($eventName, $this->_events)) {
-            throw new Pdbg_Exception("unknown event: {$eventName}");
+        if (is_array($eventName)) {
+            foreach ($eventName as $name => $fn) {
+                $this->addObserver($name, $fn);
+            }
+        } else {
+            if (!array_key_exists($eventName, $this->_events)) {
+                throw new Pdbg_Exception("unknown event: {$eventName}");
+            }
+
+            $this->_events[$eventName][] = $observerFn;
+
+            return $this;
         }
-
-        $this->_events[$eventName][] = $observerFn;
-
-        return $this;
     }
 }

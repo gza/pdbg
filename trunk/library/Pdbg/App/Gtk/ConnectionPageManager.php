@@ -36,6 +36,11 @@ require_once 'Pdbg/Observable.php';
 require_once 'Pdbg/Net/Dbgp/Connection.php';
 
 /**
+ * @see Pdbg_App_Gtk_ConnectionPagesManager
+ */
+require_once 'Pdbg/App/Gtk/ConnectionPagesManager.php';
+
+/**
  * @see Pdbg_App_Gtk_Widget_TextLog
  */
 require_once 'Pdbg/App/Gtk/Widget/TextLog.php';
@@ -94,7 +99,7 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     protected $_pageIndex;
 
     /**
-     *
+     * TODO: document
      */
     public function __construct(Pdbg_App_ConnectionManager $connMgr)
     {
@@ -106,22 +111,20 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     }
 
     /**
-     *
+     * TODO: document
      */
     protected function _initApp()
     {
-        $this->_connMgr->addObserver('response-read', 
-            array($this, 'onResponseRead'));
-        $this->_connMgr->addObserver('command-written',
-            array($this, 'onCommandWritten'));
-        $this->_connMgr->addObserver('init-packet',
-            array($this, 'onInitPacket'));
-        $this->_connMgr->addObserver('init-source',
-            array($this, 'onInitSource'));
+        $this->_connMgr->addObserver(array(
+            'response-read'   => array($this, 'onResponseRead'),
+            'command-written' => array($this, 'onCommandWritten'),
+            'init-packet'     => array($this, 'onInitPacket'),
+            'init-source'     => array($this, 'onInitSource'),
+        ));
     }
 
     /**
-     *
+     * TODO: document
      */
     protected function _initGui()
     {
@@ -156,13 +159,15 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
 
         $this->_tabLabel = new GtkLabel();
 
-        $mainNotebook = Pdbg_App::getInstance()->getMainNotebook();
-        $this->_pageIndex = $mainNotebook->append_page(
-            $this->_fileSplit, $this->_tabLabel);
+        $pagesMgr = Pdbg_App_Gtk_ConnectionPagesManager::getInstance();
+        $notebook = $pagesMgr->getNotebook();
+
+        $this->_pageIndex = $notebook->append_page($this->_fileSplit, 
+            $this->_tabLabel);
     }
 
     /**
-     *
+     * TODO: document
      */
     public function onResponseRead($response)
     {
@@ -170,7 +175,7 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     }
 
     /**
-     *
+     * TODO: document
      */
     public function onCommandWritten($command)
     {
@@ -178,7 +183,7 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     }
 
     /**
-     *
+     * TODO: document
      */
     public function onInitPacket($response, $ipAddress, $port)
     {
@@ -197,7 +202,7 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     }
 
     /**
-     *
+     * TODO: document
      */
     public function onInitSource($response)
     {
@@ -207,8 +212,10 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
         // The initial display of the page is setup, make the tab show up.
         $this->_fileSplit->show_all();
 
+        $pagesMgr = Pdbg_App_Gtk_ConnectionPagesManager::getInstance();
+        $notebook = $pagesMgr->getNotebook();
+
         // Make the page be on top.
-        $mainNotebook = Pdbg_App::getInstance()->getMainNotebook();
-        $mainNotebook->set_current_page($this->_pageIndex);
+        $notebook->set_current_page($this->_pageIndex);
     }
 }

@@ -41,17 +41,23 @@ require_once 'Pdbg/Observable.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
+final class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
 {
     protected static $_buttonNames = array(
         'continue' => 'Continue',
-        'break'    => 'Break',
         'stop'     => 'Stop',
         '-0'       => '-',
         'stepInto' => 'Step Into',
         'stepOver' => 'Step Over',
         'stepOut'  => 'Step Out',
     );
+
+    /**
+     * The toolbar managed by this instance.
+     *
+     * @var GtkToolbar
+     */
+    protected $_toolbar;
 
     /**
      * The toolbar button widgets.
@@ -67,22 +73,37 @@ class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
      */
     public function __construct()
     {
-        $this->_init();
     }    
+
+    /**
+     * Gets the singleton instance.
+     *
+     * @return Pdbg_App_Gtk_ToolbarManager
+     */
+    public function getInstance()
+    {
+        static $inst = null;
+
+        if ($inst === null) {
+            $inst = new Pdbg_App_Gtk_ToolbarManager();
+        }
+
+        return $inst;
+    }
 
     /**
      * Initializes the toolbar buttons and event handlers.
      *
      * @return void
      */
-    protected function _init()
+    public function init(GtkToolbar $toolbar)
     {
-        $toolbar = Pdbg_App::getInstance()->getMainToolbar();
+        $this->_toolbar = $toolbar;
 
         foreach (self::$_buttonNames as $name => $label) {
             if ($label == '-') {
                 $sep = new GtkSeparatorToolItem();
-                $toolbar->insert($sep, -1);
+                $this->_toolbar->insert($sep, -1);
             } else {
                 $img = GtkImage::new_from_file(APP_PATH . "/images/{$name}.png");
 
@@ -90,8 +111,7 @@ class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
                 //$btn->set_sensitive(false);
                 $btn->connect_simple('clicked', array($this, 'on' . ucfirst($name)));
 
-                $toolbar->insert($btn, -1);
-
+                $this->_toolbar->insert($btn, -1);
                 $this->_buttons[$name] = $btn;
             }
         }
@@ -101,13 +121,6 @@ class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
      *
      */
     public function onContinue()
-    {
-    }
-
-    /**
-     *
-     */
-    public function onBreak()
     {
     }
 

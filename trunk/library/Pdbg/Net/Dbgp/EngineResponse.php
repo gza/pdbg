@@ -156,4 +156,55 @@ class Pdbg_Net_Dbgp_EngineResponse
 
         return ($errors->length == 0);
     }
+
+    /**
+     * Returns the engine response type (the class name with all package
+     * components stripped off).
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        $className = get_class($this);
+        preg_match('/([^_]*)$/', $className, $m);
+
+        return $m[1];
+    }
+
+    /**
+     * Instantiates a DOMXPath object using the response DOMDocument and sets
+     * the namespaces.
+     *
+     * @return DOMXPath
+     */
+    public function instantiateXPath()
+    {
+        $xpath = new DOMXPath($this->_doc);
+        $xpath->registerNamespace('dp', 'urn:debugger_protocol_v1');
+
+        return $xpath;
+    }
+
+    /**
+     * Returns the value of a particular node or throws an exception if not 
+     * found.
+     *
+     * @param string $xpathStr
+     * @return string
+     * @throws Pdbg_Net_Dbgp_EngineResponse_Exception
+     */
+    public function getXPathValue($xpathStr)
+    {
+        if (!$this->commandSuccessful()) {
+            throw new Pdbg_Net_Dbgp_EngineResponse_Exception("command must be successful");
+        } else {
+            $entries = $this->instantiateXPath()->query($xpathStr);
+
+            if (is_object($entries) and $entries->length > 0) {
+                return $entries->item(0)->nodeValue;
+            } else {
+                throw new Pdbg_Net_Dbgp_EngineResponse_Exception("value {$xpathStr} not found");
+            }
+        }
+    }
 }

@@ -61,8 +61,9 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
     /**
      * Connection state constants.
      */
-    const AWAITING_INIT     = 'AwaitingInit';
-    const AWAITING_INIT_SRC = 'AwaitingInitSrc';
+    const AW_INIT     = 'AwaitingInit';
+    const AW_INIT_SRC = 'AwaitingInitSrc';
+    const AW_INIT_STA = 'AwaitingInitStatus';
 
     /**
      * The connection managed by this manager.
@@ -89,14 +90,17 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         parent::__construct();
 
         $this->_conn  = $conn;
-        $this->_state = self::AWAITING_INIT;
+        $this->_state = self::AW_INIT;
 
         Pdbg_App::getInstance()->addObserver('timeout', array($this, 'onTimeout'));
 
-        $this->addEvent('response-read')
-             ->addEvent('command-written')
-             ->addEvent('init-packet')
-             ->addEvent('init-source');
+        $this->addEvent(array(
+             'response-read',
+             'command-written',
+             'init-packet',
+             'init-source',
+             'status'
+        ));
     }
 
     /**
@@ -121,7 +125,7 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
      */
     protected function _runAwaitingInit($response)
     {
-        if (!($response instanceof Pdbg_Net_Dbgp_EngineResponse_Init)) {
+        if ($response->getType() != 'Init') {
             throw new Pdbg_App_Exception("expected init response");
         }
 
@@ -137,7 +141,7 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
 
         $this->fire('command-written', $cmd);
 
-        $this->_state = self::AWAITING_INIT_SRC;
+        $this->_state = self::AW_INIT_SRC;
     }
 
     /**
@@ -148,10 +152,28 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         if (!$response->commandSuccessful()) {
             throw new Pdbg_App_Exception("initial source command must be successful");
         }
-        if (!($response instanceof Pdbg_Net_Dbgp_EngineResponse_Source)) {
+        if ($response->getType() != 'Source') {
             throw new Pdbg_App_Exception("expected source response");
         }
 
         $this->fire('init-source', $response);
+
+        $cmd = $this->_conn->writeCommand('status');
+
+        $this->fire('command-written', $cmd);
+
+        $this->_state = self::AW_INIT_STA;
+    }
+
+    protected function _runAwaitingInitStatus($response)
+    {
+        if (!$response->commandSuccessful()) {
+            throw new Pdbg_App_Exception("initial status command must be successful");
+        }
+        if ($response->getType() != 'Status') {
+            throw new Pdbg_App_Exception("expected status response");
+        }
+
+        $this->fire('status', $response);
     }
 }

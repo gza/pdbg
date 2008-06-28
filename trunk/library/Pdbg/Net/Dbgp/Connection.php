@@ -92,7 +92,7 @@ class Pdbg_Net_Dbgp_Connection
      * @param string|null $data
      * @return Pdbg_Net_Dbgp_IdeCommand
      */
-    public function writeCommand($command, $args = null, $data = null)
+    public function writeCommand($command, $args = array(), $data = null)
     {
         if ($command instanceof Pdbg_Net_Dbgp_IdeCommand) {
             $this->_socket->writeAll((string) $command);

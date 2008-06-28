@@ -66,12 +66,7 @@ class Pdbg_Net_Dbgp_EngineResponse_Factory
 
         $command = Pdbg_Net_Dbgp_EngineResponse::getCommandFromDocument($doc);
 
-        switch ($command) {
-            case 'source':
-                return self::_instantiateClass($command, $doc);
-            default:
-                return new Pdbg_Net_Dbgp_EngineResponse($doc);
-        }
+        return self::_instantiateClass($command, $doc);
     }
 
     /**
@@ -85,10 +80,36 @@ class Pdbg_Net_Dbgp_EngineResponse_Factory
         $className = "Pdbg_Net_Dbgp_EngineResponse_{$capType}";
         $path      = str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
 
-        if (!class_exists($className)) {
+        if (!class_exists($className) and self::_isIncludable($path)) {
             require_once $path;
+        }
+        if (!class_exists($className)) {
+            $className = 'Pdbg_Net_Dbgp_EngineResponse';
         }
 
         return new $className($doc);
+    }
+
+    /**
+     * Checks to see if $fileName, which is assumed to be a relative path, is
+     * includable; that is, if it exists and is readable relative to the 
+     * current include path.
+     *
+     * @param string $fileName
+     * @return boolean
+     */
+    protected static function _isIncludable($fileName)
+    {
+        $paths = explode(PATH_SEPARATOR, get_include_path());
+
+        foreach ($paths as $path) {
+            $absPath = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+
+            if (is_readable($absPath)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
