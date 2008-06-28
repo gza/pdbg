@@ -59,16 +59,6 @@ require_once 'Pdbg/App/Gtk/ConnectionPagesManager.php';
 class Pdbg_App_Gtk extends Pdbg_App
 {
     /**
-     * @var Pdbg_Gtk_ConnectionPages_Manager
-     */
-    protected $_connPagesMgr;
-
-    /**
-     * @var Pdbg_App_Gtk_ToolbarManager
-     */
-    protected $_toolbarMgr;
-
-    /**
      * @var Pdbg_Net_Dbgp_Connection_Listener
      */
     protected $_listener;
@@ -79,15 +69,10 @@ class Pdbg_App_Gtk extends Pdbg_App
     protected $_mainWin;
 
     /**
-     * @var GtkToolbar
+     * Constructs an instance.
+     *
+     * @return void
      */
-    protected $_mainToolbar;
-
-    /**
-     * @var GtkNotebook
-     */
-    protected $_mainNotebook;
-
     public function __construct()
     {
         parent::__construct();
@@ -127,25 +112,24 @@ class Pdbg_App_Gtk extends Pdbg_App
         // Setup the main notebook.
         $tabLabel  = new GtkLabel();
         $bodyLabel = new GtkLabel();
-        $this->_mainNotebook = new GtkNotebook();
-        $this->_mainNotebook->append_page($bodyLabel, $tabLabel);
+        $mainNotebook = new GtkNotebook();
+        $mainNotebook->append_page($bodyLabel, $tabLabel);
 
         // Setup the main toolbar.
-        $this->_mainToolbar = new GtkToolbar();
+        $mainToolbar = new GtkToolbar();
 
         $vbox = new GtkVBox();
-        $vbox->pack_start($this->_mainToolbar, false, true);
-        $vbox->pack_start($this->_mainNotebook, true, true);
+        $vbox->pack_start($mainToolbar, false, true);
+        $vbox->pack_start($mainNotebook, true, true);
 
         $this->_mainWin->add($vbox);
 
         // Set up the connection listener.
         $this->_listener = new Pdbg_Net_Dbgp_Connection_Listener();
 
-        // Set up the ui managers.
-        $this->_connPagesMgr = new Pdbg_App_Gtk_ConnectionPagesManager();
-        $this->_toolbarMgr   = new Pdbg_App_Gtk_ToolbarManager();
-
+        Pdbg_App_Gtk_ConnectionPagesManager::getInstance()->init($mainNotebook);
+        Pdbg_App_Gtk_ToolbarManager::getInstance()->init($mainToolbar);
+        
         // Initialize the initial page labels.
         $ip   = $this->_listener->getIpAddress();
         $port = $this->_listener->getPort();
@@ -156,26 +140,6 @@ class Pdbg_App_Gtk extends Pdbg_App
         // processing, ie accepting debugger engine connections.
         // TODO: make the timeout value configurable.
         Gtk::timeout_add(500, array($this, 'onTimeout'));
-    }
-
-    /**
-     * Get the notebook widget containing the connection pages.
-     *
-     * @return GtkNotebook
-     */
-    public function getMainNotebook()
-    {
-        return $this->_mainNotebook;
-    }
-
-    /**
-     * Get the application toolbar.
-     *
-     * @return GtkToolbar
-     */
-    public function getMainToolbar()
-    {
-        return $this->_mainToolbar;
     }
 
     /**

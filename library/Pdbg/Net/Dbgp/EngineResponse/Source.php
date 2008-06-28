@@ -55,10 +55,6 @@ class Pdbg_Net_Dbgp_EngineResponse_Source extends Pdbg_Net_Dbgp_EngineResponse
      */
     public function getSource()
     {
-        if (!$this->commandSuccessful()) {
-            throw new Pdbg_Net_Dbgp_EngineResponse_Exception("command must be successful");
-        } else {
-            return base64_decode($this->_doc->documentElement->nodeValue); 
-        }
+        return base64_decode($this->getXPathValue('/dp:response'));
     }
 }

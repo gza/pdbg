@@ -59,6 +59,11 @@ class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
     protected $_connPages = array();
 
     /**
+     * @var GtkNotebook
+     */
+    protected $_notebook;
+
+    /**
      * Constructs an instance.
      *
      * @param void
@@ -67,16 +72,68 @@ class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
     {
         Pdbg_App::getInstance()->addObserver('new-connection', 
             array($this, 'onNewConnection'));
+
+        $this->addEvent('page-changed');
     }
 
     /**
+     * Gets the singleton instance.
      *
-     *  @param Pdbg_Net_Dbgp_Connection $conn
-     *  @return void
+     * @return Pdbg_App_Gtk_ConnectionPagesManager
+     */
+    public function getInstance()
+    {
+        static $inst = null;
+
+        if ($inst === null) {
+            $inst = new Pdbg_App_Gtk_ConnectionPagesManager();
+        }
+
+        return $inst;
+    }
+
+    /**
+     * Initializes the connection pages manager.
+     *
+     * @return void
+     */
+    public function init(GtkNotebook $notebook)
+    {
+        $this->_notebook = $notebook;
+        $this->_notebook->connect('switch-page', array($this, 'onSwitchPage'));
+    }
+
+    /**
+     * Returns the notebook instance managed by this instance.
+     *
+     * @return GtkNotebook
+     */
+    public function getNotebook()
+    {
+        return $this->_notebook;
+    }
+
+    /**
+     * TODO: document
+     *
+     * @param Pdbg_Net_Dbgp_Connection $conn
+     * @return void
      */
     public function onNewConnection(Pdbg_Net_Dbgp_Connection $conn)
     {
         $mgr = new Pdbg_App_ConnectionManager($conn);
         $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPageManager($mgr);
+    }
+
+    /**
+     * TODO: document.
+     */
+    public function onSwitchPage($notebook, $pointer, $pageNum)
+    {
+        if ($pageNum == 0) {
+            $this->fire('page-changed', array($pageNum, null));
+        } else {
+            $this->fire('page-changed', array($pageNum, $this->_connPages[$pageNum-1]));
+        }
     }
 }
