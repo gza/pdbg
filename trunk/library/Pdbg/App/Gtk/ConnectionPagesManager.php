@@ -73,7 +73,11 @@ class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
         Pdbg_App::getInstance()->addObserver('new-connection', 
             array($this, 'onNewConnection'));
 
-        $this->addEvent('page-changed');
+        $this->addEvent(array(
+            'page-changed',
+            'current-can-interact',
+            'current-cannot-interact'
+        ));
     }
 
     /**
@@ -114,12 +118,28 @@ class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
     }
 
     /**
+     * Returns the page manager for the current notebook page.
+     *
+     * @return Pdbg_App_Gtk_ConnectionPageManager
+     */
+    public function getCurrentPageManager()
+    {
+        $currPage = $this->_notebook->get_current_page();
+
+        if ($currPage == 0) {
+            return null;
+        } else {
+            return $this->_connPages[$currPage-1];
+        }
+    }
+
+    /**
      * TODO: document
      *
      * @param Pdbg_Net_Dbgp_Connection $conn
      * @return void
      */
-    public function onNewConnection(Pdbg_Net_Dbgp_Connection $conn)
+    public function onNewConnection($app, $conn)
     {
         $mgr = new Pdbg_App_ConnectionManager($conn);
         $this->_connPages[] = new Pdbg_App_Gtk_ConnectionPageManager($mgr);
@@ -130,10 +150,43 @@ class Pdbg_App_Gtk_ConnectionPagesManager extends Pdbg_Observable
      */
     public function onSwitchPage($notebook, $pointer, $pageNum)
     {
+        $prevPageNum = $notebook->get_current_page();
+
+        if ($prevPageNum > 0) {
+            $prevPage = $this->_connPages[$prevPageNum-1];
+            $prevPage->removeObserver('can-interact', 
+                array($this, 'onCanInteract'));
+            $prevPage->removeObserver('cannot-interact',
+                array($this, 'onCannotInteract'));
+        }
+
         if ($pageNum == 0) {
             $this->fire('page-changed', array($pageNum, null));
         } else {
-            $this->fire('page-changed', array($pageNum, $this->_connPages[$pageNum-1]));
+            $currPageMgr = $this->_connPages[$pageNum-1];
+
+            $currPageMgr->addObserver(array(
+                'can-interact'    => array($this, 'onCanInteract'),
+                'cannot-interact' => array($this, 'onCannotInteract')
+            ));
+
+            $this->fire('page-changed', array($pageNum, $currPageMgr));
         }
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onCanInteract($pageMgr)
+    {
+        $this->fire('current-can-interact', $pageMgr);
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onCannotInteract($pageMgr)
+    {
+        $this->fire('current-cannot-interact', $pageMgr);
     }
 }

@@ -31,6 +31,16 @@
 require_once 'Pdbg/Observable.php';
 
 /**
+ * @see Pdbg_App_Gtk_Exception
+ */
+require_once 'Pdbg/App/Gtk/Exception.php';
+
+/**
+ * @see Pdbg_App_Gtk_ConnectionPagesManager
+ */
+require_once 'Pdbg/App/Gtk/ConnectionPagesManager.php';
+
+/**
  * Manages the toolbar ui.
  *
  * @category   Development
@@ -43,13 +53,18 @@ require_once 'Pdbg/Observable.php';
  */
 final class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
 {
+    /**
+     * Mapping of button names to display labels.
+     *
+     * @var array
+     */
     protected static $_buttonNames = array(
-        'continue' => 'Continue',
-        'stop'     => 'Stop',
-        '-0'       => '-',
-        'stepInto' => 'Step Into',
-        'stepOver' => 'Step Over',
-        'stepOut'  => 'Step Out',
+        'run'       => 'Run',
+        'detach'    => 'Detach',
+        '-0'        => '-',
+        'step_into' => 'Step Into',
+        'step_over' => 'Step Over',
+        'step_out'  => 'Step Out',
     );
 
     /**
@@ -108,47 +123,76 @@ final class Pdbg_App_Gtk_ToolbarManager extends Pdbg_Observable
                 $img = GtkImage::new_from_file(APP_PATH . "/images/{$name}.png");
 
                 $btn = new GtkToolButton($img, $label);
-                //$btn->set_sensitive(false);
-                $btn->connect_simple('clicked', array($this, 'on' . ucfirst($name)));
+
+                $btn->set_sensitive(false);
+                $btn->connect('clicked', array($this, 
+                    'onContinuationButtonClicked'), $name);
 
                 $this->_toolbar->insert($btn, -1);
                 $this->_buttons[$name] = $btn;
             }
         }
+
+        $pagesMgr = Pdbg_App_Gtk_ConnectionPagesManager::getInstance();
+        $pagesMgr->addObserver(array(
+            'page-changed'            => array($this, 'onPageChanged'),
+            'current-can-interact'    => array($this, 'onCurrentCanInteract'),
+            'current-cannot-interact' => array($this, 'onCurrentCannotInteract'),
+        ));
     }
 
     /**
-     *
+     * TODO: document
      */
-    public function onContinue()
+    public function onPageChanged($pagesMgr, $pageNum, $connPageMgr)
+    {
+        if (null !== $connPageMgr) {
+            $connMgr   = $connPageMgr->getConnectionManager();
+            $sensitize = $connMgr->canSendContinuation();
+        } else {
+            $sensitize = false;
+        }
+
+        $this->_sensitizeContinuationButtons($sensitize);
+    }
+
+    /**
+     * TODO: document
+     */
+    protected function _sensitizeContinuationButtons($sensitize)
+    {
+        foreach ($this->_buttons as $button) {
+            $button->set_sensitive($sensitize);
+        }
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onContinuationButtonClicked($button, $buttonName)
+    {
+        $connPagesMgr = Pdbg_App_Gtk_ConnectionPagesManager::getInstance();
+        $connPageMgr  = $connPagesMgr->getCurrentPageManager();
+
+        if (null === $connPageMgr) {
+            throw new Pdbg_App_Gtk_Exception("Buttons should be insensitive");
+        }
+
+        $connMgr = $connPageMgr->getConnectionManager();
+        $connMgr->sendContinuation($buttonName);
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onCurrentCanInteract($pagesMgr, $pageMgr)
     {
     }
 
     /**
-     *
+     * TODO: document
      */
-    public function onStop()
-    {
-    }
-
-    /**
-     *
-     */
-    public function onStepInto()
-    {
-    }
-
-    /**
-     *
-     */
-    public function onStepOver()
-    {
-    }
-
-    /**
-     *
-     */
-    public function onStepOut()
+    public function onCurrentCannotInteract($pagesMgr, $pageMgr)
     {
     }
 }
