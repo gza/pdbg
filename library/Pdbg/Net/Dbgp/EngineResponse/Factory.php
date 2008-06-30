@@ -66,7 +66,17 @@ class Pdbg_Net_Dbgp_EngineResponse_Factory
 
         $command = Pdbg_Net_Dbgp_EngineResponse::getCommandFromDocument($doc);
 
-        return self::_instantiateClass($command, $doc);
+        switch ($command) {
+            case 'run':
+            case 'step_into':
+            case 'step_over':
+            case 'step_out':
+            case 'stop':
+            case 'detach':
+                return self::_instantiateClass('status', $doc);
+            default:
+                return self::_instantiateClass($command, $doc);
+        }
     }
 
     /**

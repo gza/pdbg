@@ -59,11 +59,23 @@ require_once 'Pdbg/Net/Dbgp/Connection.php';
 class Pdbg_App_ConnectionManager extends Pdbg_Observable
 {
     /**
-     * Connection state constants.
+     * Manager state constants.
      */
-    const AW_INIT     = 'AwaitingInit';
-    const AW_INIT_SRC = 'AwaitingInitSrc';
-    const AW_INIT_STA = 'AwaitingInitStatus';
+    const AWAITING_INIT        = 'AwaitingInit';
+    const AWAITING_INIT_SOURCE = 'AwaitingInitSource';
+    const AWAITING_INIT_STATUS = 'AwaitingInitStatus';
+    const CAN_INTERACT         = 'CanInteract';
+    const CANNOT_INTERACT      = 'CannotInteract';
+
+    /**
+     * Continuation command constants.
+     */
+    const RUN       = 'run';
+    const STEP_INTO = 'step_into';
+    const STEP_OVER = 'step_over';
+    const STEP_OUT  = 'step_out';
+    const STOP      = 'stop';
+    const DETACH    = 'detach';
 
     /**
      * The connection managed by this manager.
@@ -73,11 +85,25 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
     protected $_conn;
 
     /**
-     * Value equals one of the connection state constants.
+     * Value equals one of the manager state constants.
      *
      * @var string
      */
-    protected $_state;
+    protected $_mgrState;
+
+    /**
+     * The status value returned from the last status response.
+     *
+     * @var string
+     */
+    protected $_lastStatus = null;
+
+    /**
+     * The reason value return from the last status response.
+     *
+     * @var string
+     */
+    protected $_lastReason = null;
 
     /**
      * Constructs an instance.
@@ -90,7 +116,7 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         parent::__construct();
 
         $this->_conn  = $conn;
-        $this->_state = self::AW_INIT;
+        $this->_mgrState = self::AWAITING_INIT;
 
         Pdbg_App::getInstance()->addObserver('timeout', array($this, 'onTimeout'));
 
@@ -99,8 +125,67 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
              'command-written',
              'init-packet',
              'init-source',
-             'status'
+             'ready',
+             'can-interact',
+             'cannot-interact',
+             'status',
         ));
+    }
+
+    /**
+     * Returns the connection status as returned by the last status response.
+     *
+     * @return string
+     */
+    public function getEngineStatus()
+    {
+        return $this->_lastStatus;
+    }
+
+    /**
+     * Returns the status change reason as returned by the last status response.
+     *
+     * @return string
+     */
+    public function getStatusReason()
+    {
+        return $this->_lastReason;
+    }
+
+    /**
+     * Is the state of the ide/engine communications such that the ide can
+     * interact with the engine?
+     *
+     * @return boolean
+     */
+    public function canInteract()
+    {
+        return ($this->_mgrState == self::CAN_INTERACT);
+    }
+
+    /**
+     * Sends a continuation command (run, step_into, etc.)
+     *
+     * @param string $type One of the continuation command constants.
+     * @return void
+     */
+    public function sendContinuation($type)
+    {
+        $this->_mgrState = self::CANNOT_INTERACT;
+
+        $this->fire('command-written', $this->_conn->writeCommand($type));
+        $this->fire('cannot-interact');
+    }
+
+    /**
+     * Returns true if continuation commands can be sent over the connection.
+     *
+     * @return boolean
+     */
+    public function canSendContinuation()
+    {
+        return in_array($this->_lastStatus, array('starting', 'break')) and
+               $this->_mgrState == self::CAN_INTERACT;
     }
 
     /**
@@ -116,17 +201,16 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
         }
 
         $this->fire('response-read', $response);
-
-        $this->{'_run' . $this->_state}($response);
+        $this->{'_run' . $this->_mgrState}($response);
     }
 
     /**
-     *
+     * TODO: document
      */
     protected function _runAwaitingInit($response)
     {
         if ($response->getType() != 'Init') {
-            throw new Pdbg_App_Exception("expected init response");
+            throw new Pdbg_App_Exception("Expected init response (got {$response->getType()})");
         }
 
         // read the remote ip address and port.
@@ -141,19 +225,19 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
 
         $this->fire('command-written', $cmd);
 
-        $this->_state = self::AW_INIT_SRC;
+        $this->_mgrState = self::AWAITING_INIT_SOURCE;
     }
 
     /**
-     *
+     * TODO: document
      */
-    protected function _runAwaitingInitSrc($response)
+    protected function _runAwaitingInitSource($response)
     {
         if (!$response->commandSuccessful()) {
-            throw new Pdbg_App_Exception("initial source command must be successful");
+            throw new Pdbg_App_Exception("Initial source command must be successful");
         }
         if ($response->getType() != 'Source') {
-            throw new Pdbg_App_Exception("expected source response");
+            throw new Pdbg_App_Exception("Expected source response (got {$response->getType()})");
         }
 
         $this->fire('init-source', $response);
@@ -162,18 +246,67 @@ class Pdbg_App_ConnectionManager extends Pdbg_Observable
 
         $this->fire('command-written', $cmd);
 
-        $this->_state = self::AW_INIT_STA;
+        $this->_mgrState = self::AWAITING_INIT_STATUS;
     }
 
+    /**
+     * Run by the manager after the initial source is received.
+     *
+     * @param Pdbg_Net_Dbgp_EngineResponse
+     * @return void
+     */
     protected function _runAwaitingInitStatus($response)
     {
         if (!$response->commandSuccessful()) {
-            throw new Pdbg_App_Exception("initial status command must be successful");
+            throw new Pdbg_App_Exception("Initial status command must be successful");
         }
         if ($response->getType() != 'Status') {
-            throw new Pdbg_App_Exception("expected status response");
+            throw new Pdbg_App_Exception("Expected status response (got {$response->getType()})");
         }
 
+        $this->_lastStatus = $response->getStatus();
+        $this->_lastReason = $response->getReason();
+
+        // TODO: if status == break, we need to get the initial line information
+
+        // Connection is now ready to be used by the application.
+        $this->_mgrState = self::CAN_INTERACT;
+
         $this->fire('status', $response);
+        $this->fire('ready');
+        $this->fire('can-interact');
+
+    }
+
+    /**
+     * Run by the manager when the IDE can submit commands to the engine.
+     *
+     * @param Pdbg_Net_Dbgp_EngineResponse
+     * @return void
+     */
+    protected function _runCanInteract($response)
+    {
+
+    }
+
+    /**
+     * Run by the manager when the IDE cannot submit commands to the engine.
+     *
+     * @param Pdbg_Net_Dbgp_EngineResponse
+     * @return void
+     */
+    protected function _runCannotInteract($response)
+    {
+        // The debugger engine is running code, and the IDE cannot send 
+        // commands. Wait until a status response is received, then switch back
+        // to CAN_INTERACT.
+        if ($response->getType() != 'Status') {
+            throw new Pdbg_App_Exception("Expected status response (got {$response->getType()})");
+        }
+
+        $this->_mgrState = self::CAN_INTERACT;
+
+        $this->fire('status', $response);
+        $this->fire('can-interact');
     }
 }

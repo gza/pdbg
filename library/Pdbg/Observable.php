@@ -102,6 +102,10 @@ class Pdbg_Observable
             $args = array($args);
         }
 
+        // Make the item being observed ($this) be the first parameter to all
+        // observer function calls.
+        array_unshift($args, $this);
+
         if (!array_key_exists($eventName, $this->_events)) {
             throw new Pdbg_Exception("unknown event: {$eventName}");
         }
@@ -135,6 +139,30 @@ class Pdbg_Observable
             $this->_events[$eventName][] = $observerFn;
 
             return $this;
+        }
+    }
+
+    /**
+     * Removes the specified observer function of the specified event name if
+     * it is an observer.
+     *
+     * @param string $eventName
+     * @param mixed $observerFn
+     * @return boolean
+     */
+    public function removeObserver($eventName, $observerFn)
+    {
+        if (!array_key_exists($eventName, $this->_events)) {
+            return false;
+        }
+
+        $index = array_search($observerFn, $this->_events[$eventName]);
+
+        if (false !== $index) {
+            unset($this->_events[$eventName][$index]);
+            return true;
+        } else {
+            return false;
         }
     }
 }

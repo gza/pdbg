@@ -106,27 +106,28 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
         parent::__construct();
 
         $this->_connMgr = $connMgr;
-        $this->_initApp();
-        $this->_initGui();
-    }
-
-    /**
-     * TODO: document
-     */
-    protected function _initApp()
-    {
         $this->_connMgr->addObserver(array(
             'response-read'   => array($this, 'onResponseRead'),
             'command-written' => array($this, 'onCommandWritten'),
             'init-packet'     => array($this, 'onInitPacket'),
             'init-source'     => array($this, 'onInitSource'),
+            'ready'           => array($this, 'onConnectionReady'),
+            'can-interact'    => array($this, 'onCanInteract'),
+            'cannot-interact' => array($this, 'onCannotInteract'),
         ));
+
+        $this->addEvent(array(
+            'can-interact',
+            'cannot-interact'
+        ));
+
+        $this->_init();
     }
 
     /**
      * TODO: document
      */
-    protected function _initGui()
+    protected function _init()
     {
         $this->_commTextLog = new Pdbg_App_Gtk_Widget_TextLog();
 
@@ -169,7 +170,15 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     /**
      * TODO: document
      */
-    public function onResponseRead($response)
+    public function getConnectionManager()
+    {
+        return $this->_connMgr;
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onResponseRead($connMgr, $response)
     {
         $this->_commTextLog->log('<<', $response->getXml());
     }
@@ -177,7 +186,7 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     /**
      * TODO: document
      */
-    public function onCommandWritten($command)
+    public function onCommandWritten($connMgr, $command)
     {
         $this->_commTextLog->log('>>', $command->build(false));
     }
@@ -185,7 +194,7 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     /**
      * TODO: document
      */
-    public function onInitPacket($response, $ipAddress, $port)
+    public function onInitPacket($connMgr, $response, $ipAddress, $port)
     {
         list($engine, $version) = $response->getEngineInfo();
         $text = "[$ipAddress]";
@@ -204,11 +213,16 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
     /**
      * TODO: document
      */
-    public function onInitSource($response)
+    public function onInitSource($connMgr, $response)
     {
-        $this->_sourceView->get_buffer()
-                          ->set_text($response->getSource());
+        $this->_sourceView->get_buffer()->set_text($response->getSource());
+    }
 
+    /**
+     * TODO: document
+     */
+    public function onConnectionReady($connMgr)
+    {
         // The initial display of the page is setup, make the tab show up.
         $this->_fileSplit->show_all();
 
@@ -217,5 +231,21 @@ class Pdbg_App_Gtk_ConnectionPageManager extends Pdbg_Observable
 
         // Make the page be on top.
         $notebook->set_current_page($this->_pageIndex);
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onCanInteract($connMgr)
+    {
+        $this->fire('can-interact');
+    }
+
+    /**
+     * TODO: document
+     */
+    public function onCannotInteract($connMgr)
+    {
+        $this->fire('cannot-interact');
     }
 }

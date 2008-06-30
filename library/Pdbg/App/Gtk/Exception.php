@@ -26,9 +26,9 @@
  */
 
 /**
- * @see Pdbg_Exception
+ * @see Pdbg_App_Exception
  */
-require_once 'Pdbg/Exception.php';
+require_once 'Pdbg/App/Exception.php';
 
 /**
  * The package exception class.
@@ -41,6 +41,6 @@ require_once 'Pdbg/Exception.php';
  * @version    SVN: $Id$
  * @link       http://pdbg.googlecode.com
  */
-class Pdbg_App_Exception extends Pdbg_Exception
+class Pdbg_App_Gtk_Exception extends Pdbg_Exception
 {
 }
