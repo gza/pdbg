@@ -71,14 +71,31 @@ BUILDING_RESPONSE_DATA   = 1
 RESPONSE_BUILT = 2
 
 class EngineResponseBuilder:
+
+    """Build an EngineResponse instance from debugger engine data.
+
+    Debugger engines send responses in the following format:
+
+    DATA_LENGTH<NULL>DATA<NULL>
+
+    This class expects data of the above format passed into its add_data 
+    method. When a complete response is received, the get_response method
+    will return an instance instead of None.
+    """
     
     def __init__(self):
+        """Constructs an instance."""
         self._state = BUILDING_RESPONSE_AMOUNT
         self._data_length = 0
         self._data_buffer = StringIO()
 
     @property
     def request_amount(self):
+        """Returns the maximum amount of data to be passed into add_data.
+        
+        Call this method when reading from a socket to find out how much data
+        should be supplied to the next add_data call.
+        """
         if self._state == BUILDING_RESPONSE_AMOUNT:
             return 1
         else:
@@ -86,6 +103,11 @@ class EngineResponseBuilder:
             return 1 + self._data_length - data_len
 
     def add_data(self, data):
+        """Add data to the buffer.
+        
+        Data passed into this method is accumlated and used to instantiate a
+        EngineResponse object when all data has been added.
+        """
         if len(data) == 0:
             return
         if self._state == BUILDING_RESPONSE_AMOUNT:
@@ -103,6 +125,7 @@ class EngineResponseBuilder:
                 self._data_buffer.write(data)
     
     def get_response(self):
+        """Return a response object if all data has been received."""
         if self._state == RESPONSE_BUILT:
             return EngineResponse(self._data_buffer.getvalue())
         else:
