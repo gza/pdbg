@@ -7,6 +7,9 @@ __version__ = "$Id$"
 
 from lxml import etree
 from StringIO import StringIO
+from types import *
+import re
+import base64
 
 _response_namespaces = {
     'dp': 'urn:debugger_protocol_v1',
@@ -19,8 +22,14 @@ class EngineResponseException(Exception):
 class EngineResponse:
 
     def __init__(self, xml):
-        """Construct an instance."""
-        self._xml_root = etree.fromstring(xml)
+        """Construct an instance.
+        
+        The xml parameter can be either an XML string or an lxml Element.
+        """
+        if not isinstance(xml, str):
+            self._xml_root = xml
+        else:
+            self._xml_root = etree.fromstring(xml)
 
     @property
     def xml(self):
@@ -32,9 +41,18 @@ class EngineResponse:
         return etree.tostring(self._xml_root, xml_declaration=True)
 
     @property
+    def xml_root(self):
+        """Return the lxml root Element."""
+        return self._xml_root
+
+    @property
     def transaction_id(self):
         """Return the unique id of the command that triggered this response."""
         return int(self.get_xpath_value('/dp:response/@transaction_id'))
+
+    @property
+    def command(self):
+        return self.get_xpath_value('/dp:response/@command')
 
     @property
     def successful(self):
@@ -65,6 +83,57 @@ class EngineResponse:
                 return result[0]
             else:
                 return result[0].text
+
+class InitResponse(EngineResponse):
+    """Represent the initial packet sent by a debugger engine."""
+
+    @property
+    def file_uri(self):
+        """Return the uri of the script file being debugged."""
+        return self.get_xpath_value('/dp:init/@fileuri')
+
+    def get_engine_info(self):
+        """Return information about the debugger engine.
+
+        The information returned depends on the debugger engine 
+        implementation.
+        """
+        info  = {}
+        nodes = self.xpath('/dp:init/*')
+        for node in nodes:
+            # Remove the namespace from the tag name.
+            info_type = re.sub('^\{.*\}', '', node.tag)
+            info[info_type] = node.text
+            for (key, value) in node.attrib.items():
+                info[info_type+'_'+key] = value
+        return info
+
+class StatusResponse(EngineResponse):
+    """Represent a response to a status command."""
+
+    @property
+    def status(self):
+        """Return the status of the debugger engine.
+
+        Value will be one of: starting, stopping, stopped, running, break.
+        """
+        return self.get_xpath_value('/dp:response/@status')
+
+    @property
+    def reason(self):
+        """Return the status reason of the debugger engine.
+
+        Value will be one of: ok, error, abort, exception.
+        """
+        return self.get_xpath_value('/dp:response/@reason')
+
+class SourceResponse(EngineResponse):
+    """Represent a response to a source command."""
+
+    @property
+    def source(self):
+        """Return the source code of the requested script file."""
+        return base64.b64decode(self.get_xpath_value('/dp:response'))
 
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1
@@ -130,3 +199,26 @@ class EngineResponseBuilder:
             return EngineResponse(self._data_buffer.getvalue())
         else:
             return None
+
+def _command_to_class_name(command):
+    status_cmds = ('run', 'step_into', 'step_over', 'step_out', 
+        'stop', 'detach')
+    if command in status_cmds:
+        return 'StatusResponse'
+    else:
+        return command.capitalize() + 'Response'
+
+def factory(xml):
+    """Instantiate an EngineResponse subclass given an xml string."""
+    response = EngineResponse(xml)
+    if response.xpath('/dp:init'):
+        return InitResponse(response.xml_root)
+    if not response.successful:
+        return response
+    class_name = _command_to_class_name(response.command)
+    gbls = globals()
+    if gbls.has_key(class_name):
+        klass = gbls[class_name]
+        if isinstance(klass, ClassType):
+            return klass(response.xml_root)
+    return response
