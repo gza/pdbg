@@ -6,8 +6,7 @@
 __version__ = "$Id$"
 
 import unittest
-from engineresponse import EngineResponse, EngineResponseException, \
-    EngineResponseBuilder
+from engineresponse import *
 
 _init_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
@@ -46,6 +45,26 @@ _status_error_xml = \
 </response>
 """
 
+_source_response_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="source" 
+          transaction_id="1" 
+          encoding="base64"><![CDATA[Zm9v]]></response>
+"""
+
+_unknown_response_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="does_not_exist" 
+          transaction_id="1" />
+"""
+
+_status_response_str = str(len(_status_response_xml)) + "\x00" + \
+    _status_response_xml + "\x00"
+
 class TestEngineResponseClass(unittest.TestCase):
     """Test the EngineResponse class."""
 
@@ -71,6 +90,10 @@ class TestEngineResponseClass(unittest.TestCase):
         r = EngineResponse(_status_response_xml)
         self.assertEqual(r.xml[0:5], '<?xml')
 
+    def test_xml_root(self):
+        r = EngineResponse(_status_response_xml)
+        self.assertEqual(r.xml_root.tag, '{urn:debugger_protocol_v1}response') 
+
     def test_transaction_id(self):
         r = EngineResponse(_status_response_xml)
         self.assertEqual(r.transaction_id, 1)
@@ -87,8 +110,36 @@ class TestEngineResponseClass(unittest.TestCase):
         r = EngineResponse(_status_error_xml)
         self.assertEqual(r.error_code, 3)
 
-_status_response_str = str(len(_status_response_xml)) + "\x00" + \
-    _status_response_xml + "\x00"
+class TestInitResponseClass(unittest.TestCase):
+    """Test the InitResponse class."""
+
+    def test_file_uri(self):
+        r = InitResponse(_init_response_xml)
+        self.assertEqual(r.file_uri, 'file:///home/chris/tmp/test.php')
+
+    def test_get_engine_info(self):
+        r = InitResponse(_init_response_xml)
+        info = r.get_engine_info()
+        self.assertEqual(info['engine'], 'Xdebug')
+        self.assertEqual(info['engine_version'], '2.0.3')
+
+class TestStatusResponseClass(unittest.TestCase):
+    """Test the StatusResponse class."""
+
+    def test_status(self):
+        r = StatusResponse(_status_response_xml)
+        self.assertEqual(r.status, 'starting')
+
+    def test_reason(self):
+        r = StatusResponse(_status_response_xml)
+        self.assertEqual(r.reason, 'ok')
+
+class TestSourceResponseClass(unittest.TestCase):
+    """Test the SourceResponse class."""
+
+    def test_source(self):
+        r = SourceResponse(_source_response_xml)
+        self.assertEqual(r.source, 'foo')
 
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""
@@ -118,6 +169,24 @@ class TestEngineResponseBuilderClass(unittest.TestCase):
         self.assertEqual(response.xml[0:5], '<?xml')
         self.assertEqual(response.successful, True)
 
+class TestModuleFunctions(unittest.TestCase):
+    """Test the engineresponse module functions."""
+
+    def test_factory(self):
+        r = factory(_status_response_xml)
+        self.assertEqual(isinstance(r, StatusResponse), True)
+
+    def test_factory_error(self):
+        r = factory(_status_error_xml)
+        self.assertEqual(r.__class__, EngineResponse)
+
+    def test_factory_unknown(self):
+        r = factory(_unknown_response_xml)
+        self.assertEqual(r.__class__, EngineResponse)
+
+    def test_factory_init(self):
+        r = factory(_init_response_xml)
+        self.assertEqual(isinstance(r, InitResponse), True)
 
 if __name__ == '__main__':
     unittest.main()
