@@ -102,9 +102,22 @@ class TestEngineResponseBuilderClass(unittest.TestCase):
                 break
             req_amt = builder.request_amount
             builder.add_data(_status_response_str[added:added+req_amt])
-            added = added + req_amt
+            added += req_amt
         self.assertEqual(response.xml[0:5], '<?xml')
         self.assertEqual(response.successful, True)
+
+    def test_build_by_one(self):
+        builder = EngineResponseBuilder()
+        added = 0
+        while True:
+            response = builder.get_response()
+            if response != None:
+                break
+            builder.add_data(_status_response_str[added:added+1])
+            added += 1
+        self.assertEqual(response.xml[0:5], '<?xml')
+        self.assertEqual(response.successful, True)
+
 
 if __name__ == '__main__':
     unittest.main()
