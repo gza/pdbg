@@ -6,7 +6,8 @@
 __version__ = "$Id$"
 
 import unittest
-from engineresponse import EngineResponse, EngineResponseException
+from engineresponse import EngineResponse, EngineResponseException, \
+    EngineResponseBuilder
 
 _init_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
@@ -85,6 +86,25 @@ class TestEngineResponseClass(unittest.TestCase):
     def test_error_code(self):
         r = EngineResponse(_status_error_xml)
         self.assertEqual(r.error_code, 3)
+
+_status_response_str = str(len(_status_response_xml)) + "\x00" + \
+    _status_response_xml + "\x00"
+
+class TestEngineResponseBuilderClass(unittest.TestCase):
+    """Test the EngineResponseBuilder class."""
+
+    def test_build(self):
+        builder = EngineResponseBuilder()
+        added = 0
+        while True:
+            response = builder.get_response()
+            if response != None:
+                break
+            req_amt = builder.request_amount
+            builder.add_data(_status_response_str[added:added+req_amt])
+            added = added + req_amt
+        self.assertEqual(response.xml[0:5], '<?xml')
+        self.assertEqual(response.successful, True)
 
 if __name__ == '__main__':
     unittest.main()
