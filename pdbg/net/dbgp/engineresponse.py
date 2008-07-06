@@ -7,7 +7,7 @@ __version__ = "$Id$"
 
 from lxml import etree
 from StringIO import StringIO
-from types import *
+from types import ClassType
 import re
 import base64
 
@@ -16,7 +16,7 @@ _response_namespaces = {
 }
 
 class EngineResponseException(Exception):
-    """Thrown by the EngineResponse class on error."""
+    """An error occurred in the EngineResponse class."""
     pass
 
 class EngineResponse:
@@ -182,6 +182,7 @@ class EngineResponseBuilder:
         if self._state == BUILDING_RESPONSE_AMOUNT:
             if data[0] == "\x00":
                 self._data_length = int(self._data_buffer.getvalue())
+                self._data_buffer.close()
                 self._data_buffer = StringIO()
                 self._state = BUILDING_RESPONSE_DATA
             else:
@@ -196,7 +197,12 @@ class EngineResponseBuilder:
     def get_response(self):
         """Return a response object if all data has been received."""
         if self._state == RESPONSE_BUILT:
-            return EngineResponse(self._data_buffer.getvalue())
+            data = self._data_buffer.getvalue()
+            self._state = BUILDING_RESPONSE_AMOUNT
+            self._data_length = 0
+            self._data_buffer.close()
+            self._data_buffer = StringIO()
+            return factory(data)
         else:
             return None
 

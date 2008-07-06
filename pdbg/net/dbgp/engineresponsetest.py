@@ -6,6 +6,7 @@
 __version__ = "$Id$"
 
 import unittest
+from StringIO import StringIO
 from engineresponse import *
 
 _init_response_xml = \
@@ -144,30 +145,35 @@ class TestSourceResponseClass(unittest.TestCase):
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""
 
-    def test_build(self):
-        builder = EngineResponseBuilder()
-        added = 0
+    def _build_response(self, builder, amt_fn):
+        io = StringIO(_status_response_str)
         while True:
             response = builder.get_response()
             if response != None:
                 break
-            req_amt = builder.request_amount
-            builder.add_data(_status_response_str[added:added+req_amt])
-            added += req_amt
-        self.assertEqual(response.xml[0:5], '<?xml')
-        self.assertEqual(response.successful, True)
+            builder.add_data(io.read(amt_fn(builder)))
+        return response
+
+    def test_build(self):
+        builder = EngineResponseBuilder()
+        r = self._build_response(builder, lambda x: x.request_amount)
+        self.assertEqual(r.xml[0:5], '<?xml')
+        self.assertEqual(r.successful, True)
 
     def test_build_by_one(self):
         builder = EngineResponseBuilder()
-        added = 0
-        while True:
-            response = builder.get_response()
-            if response != None:
-                break
-            builder.add_data(_status_response_str[added:added+1])
-            added += 1
-        self.assertEqual(response.xml[0:5], '<?xml')
-        self.assertEqual(response.successful, True)
+        r = self._build_response(builder, lambda x: 1)
+        self.assertEqual(r.xml[0:5], '<?xml')
+        self.assertEqual(r.successful, True)
+
+    def test_build_twice(self):
+        builder = EngineResponseBuilder()
+        r = self._build_response(builder, lambda x: 1)
+        self.assertEqual(r.xml[0:5], '<?xml')
+        self.assertEqual(r.successful, True)
+        r = self._build_response(builder, lambda x: x.request_amount)
+        self.assertEqual(r.xml[0:5], '<?xml')
+        self.assertEqual(r.successful, True)
 
 class TestModuleFunctions(unittest.TestCase):
     """Test the engineresponse module functions."""
