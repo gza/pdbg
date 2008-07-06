@@ -1,0 +1,3 @@
+
+The images in this directory are taken from Firebug (http://getfirebug.com/). 
+Firebug is released under the BSD license.
