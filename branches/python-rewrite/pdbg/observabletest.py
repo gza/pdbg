@@ -58,7 +58,7 @@ class TestObservableClass(unittest.TestCase):
         o = Observable()
         o.register_event('foo')
         o.add_observer('foo', f1).add_observer('foo', f2)
-        o.remove_observer('foo', f2)
+        self.assertEqual(o.remove_observer('foo', f2), True)
         o.fire('foo')
         self.assertEqual(f1.times, 1)
         self.assertEqual(f2.times, 0)
