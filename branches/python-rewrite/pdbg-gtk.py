@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Written by Christopher Utz <cutz@chrisutz.com>
 # See LICENSE.txt for license information
 

@@ -5,7 +5,7 @@
 
 __version__ = "$Id$"
 
-from os.path import dirname
+import os.path
 
 class Config:
 
@@ -21,5 +21,10 @@ class Config:
         return klass._config
 
     @property
-    def asset_directory(self):
-        return dirname(dirname(__file__))
+    def app_dir(self):
+        d = os.path.dirname
+        return d(d(d(__file__)))
+
+    @property
+    def asset_dir(self):
+        return os.path.join(self.app_dir, 'assets')
