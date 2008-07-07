@@ -7,6 +7,7 @@ __version__ = "$Id$"
 
 import os.path
 import gtk.glade
+import gobject
 from ..app.observable import Observable
 from ..app.config import Config
 from ..dbgp.socketwrapper import SocketWrapper
@@ -33,11 +34,11 @@ class App(Observable):
         config = Config.get_instance()
 
         # Setup the main ui 
-        glade_file = os.path.join(config.asset_dir, 'mainwindow.glade')
+        glade_file = os.path.join(config['asset_dir'], 'mainwindow.glade')
         self._main_xml = gtk.glade.XML(glade_file)
 
         # Setup the about dialog ui
-        glade_file = os.path.join(config.asset_dir, 'aboutdialog.glade')
+        glade_file = os.path.join(config['asset_dir'], 'aboutdialog.glade')
         self._about_xml = gtk.glade.XML(glade_file)
 
         # Setup the main window signal handlers.
@@ -59,6 +60,9 @@ class App(Observable):
         info_lbl.set_text(info_lbl.get_text() % (self._listener.ip_address, \
             self._listener.port))
 
+        config = Config.get_instance()
+        gobject.timeout_add(config['timeout_interval'], self.on_timeout)
+
     def run(self):
         self._init_ui()
         self._init_app()
@@ -69,6 +73,9 @@ class App(Observable):
         dialog = self._about_xml.get_widget('about_dialog')
         dialog.run()
         dialog.hide()
+
+    def on_timeout(self):
+        return True
 
     def on_quit_app(self, *arguments):
         gtk.main_quit()
