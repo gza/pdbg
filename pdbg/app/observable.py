@@ -5,7 +5,7 @@
 
 __version__ = "$Id$"
 
-class Observable:
+class Observable(object):
 
     """Implement the observable pattern.
 

@@ -16,7 +16,7 @@ class ConnectionClosed(Exception):
     """
     pass
 
-class Connection:
+class Connection(object):
     """Manage a socket-based connection to a debugger engine.
     
     The socket object managed by this class is expected to be an instance of a

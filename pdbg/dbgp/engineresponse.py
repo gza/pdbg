@@ -8,8 +8,8 @@ __version__ = "$Id$"
 from lxml import etree
 from StringIO import StringIO
 from types import ClassType
+from base64 import b64decode
 import re
-import base64
 
 _response_namespaces = {
     'dp': 'urn:debugger_protocol_v1',
@@ -19,7 +19,7 @@ class EngineResponseException(Exception):
     """An error occurred in the EngineResponse class."""
     pass
 
-class EngineResponse:
+class EngineResponse(object):
 
     def __init__(self, xml):
         """Construct an instance.
@@ -133,13 +133,13 @@ class SourceResponse(EngineResponse):
     @property
     def source(self):
         """Return the source code of the requested script file."""
-        return base64.b64decode(self.get_xpath_value('/dp:response'))
+        return b64decode(self.get_xpath_value('/dp:response'))
 
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1
 RESPONSE_BUILT = 2
 
-class EngineResponseBuilder:
+class EngineResponseBuilder(object):
 
     """Build an EngineResponse instance from debugger engine data.
 
