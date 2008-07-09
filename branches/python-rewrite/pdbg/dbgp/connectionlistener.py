@@ -8,7 +8,7 @@ __version__ = "$Id$"
 from connection import Connection
 import socket
 
-class ConnectionListener:
+class ConnectionListener(object):
     """Listen for incoming DBGp debugger engine connections."""
 
     def __init__(self, socket_wrapper, ip_address='127.0.0.1', port=9000):

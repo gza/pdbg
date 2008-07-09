@@ -1,24 +1,26 @@
 # Written by Christopher Utz <cutz@chrisutz.com>
 # See LICENSE.txt for license information
 
-"""TODO"""
+"""TODO: document"""
 
 __version__ = "$Id$"
 
 import os.path
-import gtk.glade
 import gobject
+import gtk
 from ..app.observable import Observable
 from ..app.config import Config
 from ..dbgp.socketwrapper import SocketWrapper
 from ..dbgp.connectionlistener import ConnectionListener
+from view.app import AppView
+from view.about import AboutView
 
 class App(Observable):
 
     _app = None
 
     def __init__(self):
-        Observable.__init__(self)
+        super(App, self).__init__(self)
 
     @classmethod
     def get_instance(klass):
@@ -26,37 +28,20 @@ class App(Observable):
             klass._app = klass()
         return klass._app
 
-    @property
-    def main_window_xml(self):
-        return self._main_xml
-
     def _init_ui(self):
         config = Config.get_instance()
+        self._app_view = AppView()
+        self._about_view = AboutView()
 
-        # Setup the main ui 
-        glade_file = os.path.join(config['asset_dir'], 'mainwindow.glade')
-        self._main_xml = gtk.glade.XML(glade_file)
-
-        # Setup the about dialog ui
-        glade_file = os.path.join(config['asset_dir'], 'aboutdialog.glade')
-        self._about_xml = gtk.glade.XML(glade_file)
-
-        # Setup the main window signal handlers.
-        self._main_window = self._main_xml.get_widget('main_window')
-        self._main_window.connect('destroy', self.on_quit_app)
-
-        # Setup the menu bar item signal handlers.
-        quit_item = self._main_xml.get_widget('menubar_quit')
-        quit_item.connect('activate', self.on_quit_app)
-
-        about_item = self._main_xml.get_widget('menubar_about')
-        about_item.connect('activate', self.on_activate_about)
+        self._app_view['window'].connect('destroy', self.on_quit_app)
+        self._app_view['quit_item'].connect('activate', self.on_quit_app)
+        self._app_view['about_item'].connect('activate', self.on_activate_about)
 
     def _init_app(self):
         self._listener = ConnectionListener(SocketWrapper)
 
         # Interpolate the ip address/port into the placeholder label.
-        info_lbl = self._main_xml.get_widget('main_notebook_info')
+        info_lbl = self._app_view['info_page_label']
         info_lbl.set_text(info_lbl.get_text() % (self._listener.ip_address, \
             self._listener.port))
 
@@ -66,15 +51,17 @@ class App(Observable):
     def run(self):
         self._init_ui()
         self._init_app()
-        self._main_window.show_all()
+        self._app_view['window'].show_all()
         gtk.main()
 
     def on_activate_about(self, item):
-        dialog = self._about_xml.get_widget('about_dialog')
-        dialog.run()
-        dialog.hide()
+        self._about_view['about_dialog'].run()
+        self._about_view['about_dialog'].hide()
 
     def on_timeout(self):
+        #connection = self._listener.accept()
+        #if connection != None:
+        #    pass
         return True
 
     def on_quit_app(self, *arguments):

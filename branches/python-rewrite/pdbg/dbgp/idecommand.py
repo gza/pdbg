@@ -5,7 +5,7 @@
 
 __version__ = "$Id$"
 
-import base64
+from base64 import b64encode
 
 _next_trans_id = 1
 
@@ -25,7 +25,7 @@ def build(name, arguments=[], data=None, append_null=True):
     command = IdeCommand(name, arguments, data)
     return command.build(append_null)
 
-class IdeCommand:
+class IdeCommand(object):
 
     """Represent a DBGp protocol IDE command.
     
@@ -49,16 +49,16 @@ class IdeCommand:
 
     def has_argument(self, argument):
         """Return True if the argument exists, False otherwise."""
-        for arg_pair in self._arguments:
-            if arg_pair[0] == argument:
+        for (name, value) in self._arguments:
+            if name == argument:
                 return True
         return False
 
     def get_argument(self, argument):
         """Return the value of the specified argument."""
-        for arg_pair in self._arguments:
-            if arg_pair[0] == argument:
-                return arg_pair[1]
+        for (name, value) in self._arguments:
+            if name == argument:
+                return value
         raise LookupError, "argument %s not found" % (argument)
 
     @property
@@ -89,7 +89,7 @@ class IdeCommand:
         cmd_parts = [self._name] + map(spacify, self._arguments)
         if self._data != None:
             cmd_parts.append('--')
-            cmd_parts.append(base64.b64encode(self._data))
+            cmd_parts.append(b64encode(self._data))
         result = ' '.join(cmd_parts)
         if append_null:
             result = result + "\x00"
