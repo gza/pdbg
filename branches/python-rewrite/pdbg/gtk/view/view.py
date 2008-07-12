@@ -15,7 +15,7 @@ def widget(fn):
 class View(dict):
 
     def __init__(self):
-        self._init()
+        self._setup()
 
     def _setup(self):
         pass
