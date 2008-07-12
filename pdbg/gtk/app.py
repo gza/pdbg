@@ -20,7 +20,7 @@ class App(Observable):
     _app = None
 
     def __init__(self):
-        super(App, self).__init__(self)
+        super(App, self).__init__()
 
     @classmethod
     def get_instance(klass):
