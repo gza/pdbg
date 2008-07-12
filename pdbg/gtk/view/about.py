@@ -7,8 +7,9 @@ __version__ = "$Id$"
 
 import gtk
 from base import View, widget
+from ...app.patterns import Singleton
 
-class AboutView(View):
+class AboutView(View, Singleton):
 
     @widget
     def _about_dialog(self):
