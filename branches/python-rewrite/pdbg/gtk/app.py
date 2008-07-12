@@ -5,56 +5,55 @@
 
 __version__ = "$Id$"
 
-import os.path
 import gobject
 import gtk
 from ..app.patterns import Observable, Singleton
 from ..app.config import Config
-from ..dbgp.socketwrapper import SocketWrapper
-from ..dbgp.connectionlistener import ConnectionListener
+from ..app.mgr.listener import ListenerManager
+from mgr.pages import PagesManager
 from view.app import AppView
 from view.about import AboutView
-from mgr.pages import PagesManager
 
 class App(Observable, Singleton):
 
     def __init__(self):
         super(App, self).__init__()
 
-    def _init_ui(self):
+    def _setup(self):
         config = Config.get_instance()
-        self._app_view = AppView.get_instance()
-        self._about_view = AboutView()
 
-        self._app_view['window'].connect('destroy', self.on_quit_app)
-        self._app_view['quit_item'].connect('activate', self.on_quit_app)
-        self._app_view['about_item'].connect('activate', self.on_activate_about)
+        # Connect application signal handlers.
+        app_view = AppView.get_instance()
+        app_view['window'].connect('destroy', self.on_quit_app)
+        app_view['quit_item'].connect('activate', self.on_quit_app)
+        app_view['about_item'].connect('activate', self.on_activate_about)
 
-    def _init_app(self):
-        self._listener = ConnectionListener(SocketWrapper)
+        # Setup singleton managers.
+        ListenerManager.get_instance().setup()
+        PagesManager.get_instance().setup()
 
         # Interpolate the ip address/port into the placeholder label.
-        info_lbl = self._app_view['info_page_label']
-        info_lbl.set_text(info_lbl.get_text() % (self._listener.ip_address, \
-            self._listener.port))
+        app_view = AppView.get_instance()
+        info_lbl = app_view['info_page_label']
+        listener = ListenerManager.get_instance().listener
+        info_lbl.set_text(info_lbl.get_text() % (listener.ip_address, \
+            listener.port))
 
-        config = Config.get_instance()
+        # Register a timeout function to check for incoming connections.
         gobject.timeout_add(config['timeout_interval'], self.on_timeout)
 
     def run(self):
-        self._init_ui()
-        self._init_app()
-        self._app_view['window'].show_all()
+        self._setup()
+        AppView.get_instance()['window'].show_all()
         gtk.main()
 
     def on_activate_about(self, item):
-        self._about_view['about_dialog'].run()
-        self._about_view['about_dialog'].hide()
+        about_view = AboutView.get_instance()
+        about_view['about_dialog'].run()
+        about_view['about_dialog'].hide()
 
     def on_timeout(self):
-        #connection = self._listener.accept()
-        #if connection != None:
-        #    pass
+        ListenerManager.get_instance().accept_connection()
         return True
 
     def on_quit_app(self, *arguments):
