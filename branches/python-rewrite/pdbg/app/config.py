@@ -7,21 +7,14 @@ __version__ = "$Id$"
 
 import os.path
 import inspect
+from patterns import Singleton
 
-class Config(dict):
-
-    _config = None
+class Config(dict, Singleton):
 
     def __init__(self):
         self.update({
             'timeout_interval': 400
         })
-
-    @classmethod
-    def get_instance(klass):
-        if klass._config == None:
-            klass._config = klass()
-        return klass._config
 
     def __getitem__(self, key):
         method_name = '_prop_' + str(key)
