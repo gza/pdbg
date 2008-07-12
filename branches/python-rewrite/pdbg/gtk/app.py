@@ -8,29 +8,22 @@ __version__ = "$Id$"
 import os.path
 import gobject
 import gtk
-from ..app.observable import Observable
+from ..app.patterns import Observable, Singleton
 from ..app.config import Config
 from ..dbgp.socketwrapper import SocketWrapper
 from ..dbgp.connectionlistener import ConnectionListener
 from view.app import AppView
 from view.about import AboutView
+from mgr.pages import PagesManager
 
-class App(Observable):
-
-    _app = None
+class App(Observable, Singleton):
 
     def __init__(self):
         super(App, self).__init__()
 
-    @classmethod
-    def get_instance(klass):
-        if klass._app == None:
-            klass._app = klass()
-        return klass._app
-
     def _init_ui(self):
         config = Config.get_instance()
-        self._app_view = AppView()
+        self._app_view = AppView.get_instance()
         self._about_view = AboutView()
 
         self._app_view['window'].connect('destroy', self.on_quit_app)
