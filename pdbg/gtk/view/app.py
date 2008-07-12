@@ -7,10 +7,11 @@ __version__ = "$Id$"
 
 import gtk
 import os.path
-from view import View, widget
+from base import View, widget
 from ...app.config import Config
+from ...app.patterns import Singleton
 
-class AppView(View):
+class AppView(View, Singleton):
 
     @widget
     def _quit_item(self):

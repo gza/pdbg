@@ -6,7 +6,7 @@
 __version__ = "$Id$"
 
 import gtk
-from view import View, widget
+from base import View, widget
 
 class AboutView(View):
 

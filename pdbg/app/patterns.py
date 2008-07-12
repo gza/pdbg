@@ -14,7 +14,7 @@ class Singleton(object):
 
     """Implement the singleton pattern.
 
-    Extend this class to make implement the singleton pattern."""
+    Extend this class to implement the singleton pattern."""
 
     @classmethod
     def get_instance(klass):
@@ -93,3 +93,6 @@ class Observable(object):
                 del self._events[name][idx]
                 return True
         return False
+
+class Manager(Observable):
+    pass
