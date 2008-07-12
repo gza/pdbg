@@ -1,9 +1,32 @@
 # Written by Christopher Utz <cutz@chrisutz.com>
 # See LICENSE.txt for license information
 
-"""Implement the observable pattern."""
+"""Design patterns used throughout the application."""
 
 __version__ = "$Id$"
+
+class SingletonException(Exception):
+    """Thrown on error by the Singleton class."""
+
+    pass
+
+class Singleton(object):
+
+    """Implement the singleton pattern.
+
+    Extend this class to make implement the singleton pattern."""
+
+    @classmethod
+    def get_instance(klass):
+        """Get the singleton instance of the class.
+
+        This method creates an instance if one does not yet exist.
+        """
+        if klass == Singleton:
+            raise SingletonException, "Cannot call get_instance on class Singleton."
+        if not klass.__dict__.has_key('_singleton'):
+            klass._singleton = klass()
+        return klass._singleton
 
 class Observable(object):
 
@@ -70,5 +93,3 @@ class Observable(object):
                 del self._events[name][idx]
                 return True
         return False
-
-

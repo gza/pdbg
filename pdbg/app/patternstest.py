@@ -1,18 +1,47 @@
 # Written by Christopher Utz <cutz@chrisutz.com>
 # See LICENSE.txt for license information
 
-"""Unit tests for the observable module."""
+"""Unit tests for the patterns module."""
 
 __version__ = "$Id$"
 
 import unittest
-from observable import *
+from patterns import *
 
 def _new_inc_observer():
     def f(observable, amt=1):
         f.times += amt
     f.times = 0
     return f
+
+class TestSingletonClass(unittest.TestCase):
+    """Test the Singleton class."""
+
+    def test_cannot_call_get_instance(self):
+        try:
+            Singleton.get_instance()
+        except SingletonException, e:
+            return
+        self.fail("SingletonException expected")
+
+    def test_get_instance(self):
+        class C1(Singleton):
+            pass
+        i1 = C1.get_instance()
+        i2 = C1.get_instance()
+        self.assertEqual(isinstance(i1, C1), True) 
+        self.assertEqual(isinstance(i2, C1), True) 
+        self.assertEqual(i1, i2)
+
+    def test_not_global(self):
+        class C1(Singleton):
+            pass
+        class C2(Singleton):
+            pass
+        i1 = C1.get_instance()
+        i2 = C2.get_instance()
+        self.assertEqual(isinstance(i1, C1), True) 
+        self.assertEqual(isinstance(i2, C2), True) 
 
 class TestObservableClass(unittest.TestCase):
     """Test the Observable class."""
