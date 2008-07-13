@@ -39,7 +39,7 @@ class App(Observable, Singleton):
         info_lbl.set_text(info_lbl.get_text() % (listener.ip_address, \
             listener.port))
 
-        # Register a timeout function to check for incoming connections.
+        # Register a timeout function to poll for incoming connections.
         gobject.timeout_add(config['timeout_interval'], self.on_timeout)
 
     def run(self):

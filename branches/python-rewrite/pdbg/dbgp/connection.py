@@ -48,10 +48,11 @@ class Connection(object):
         case the arguments and data parameters are ignored.
         """
         if isinstance(command, IdeCommand):
-            command_str = command.build()
+            command_obj = command
         else:
-            command_str = build(command, arguments, data)
-        self._socket.send_all(command_str)
+            command_obj = IdeCommand(command, arguments, data)
+        self._socket.send_all(command_obj.build())
+        return command_obj
 
     def recv_response(self):
         """Receive a response from a debugger engine.
