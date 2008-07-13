@@ -5,7 +5,6 @@
 
 __version__ = "$Id$"
 
-import inspect
 from pdbg.app.patterns import Manager, Singleton
 from pdbg.dbgp.socketwrapper import SocketWrapper
 from pdbg.dbgp.connectionlistener import ConnectionListener
@@ -54,6 +53,12 @@ class AwaitingInitStatusState(object):
     @expected_response(StatusResponse)
     def run(klass, mgr, response):
         mgr.fire('init_status', response)
+        return CanInteractState
+
+class CanInteractState(object):
+
+    @classmethod
+    def run(klass, mgr, response):
         return None
 
 class ConnectionManager(Manager):

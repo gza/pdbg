@@ -11,6 +11,7 @@ from ..app.patterns import Observable, Singleton
 from ..app.config import Config
 from ..app.mgr.listener import ListenerManager
 from mgr.pages import PagesManager
+from mgr.toolbar import ToolbarManager
 from view.app import AppView
 from view.about import AboutView
 
@@ -31,6 +32,7 @@ class App(Observable, Singleton):
         # Setup singleton managers.
         ListenerManager.get_instance().setup()
         PagesManager.get_instance().setup()
+        ToolbarManager.get_instance().setup()
 
         # Interpolate the ip address/port into the placeholder label.
         app_view = AppView.get_instance()

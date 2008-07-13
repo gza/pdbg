@@ -60,10 +60,16 @@ class PageManager(Manager):
         tab_label = self._view['tab_label']
 
         app_view = AppView.get_instance()
-        self.page_num = app_view['notebook'].append_page(outer_box, tab_label)
+        self._page_num = app_view['notebook'].append_page(outer_box, tab_label)
 
     def on_init_source(self, mgr, response):
-        print response.source
+        self._view.set_source(response.source)
 
     def on_init_status(self, mgr, response):
+        # The page's initial state is prepared, make it show up.
         self._view['outer_box'].show_all()
+
+        # Make this page be on top in the notebook.
+        app_view = AppView.get_instance()
+        app_view['notebook'].set_current_page(self._page_num)
+
