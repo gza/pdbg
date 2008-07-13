@@ -84,6 +84,10 @@ class EngineResponse(object):
             else:
                 return result[0].text
 
+    def __str__(self):
+        """Return a printable string representation of the instance."""
+        return self.xml
+
 class InitResponse(EngineResponse):
     """Represent the initial packet sent by a debugger engine."""
 

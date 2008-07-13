@@ -14,7 +14,7 @@ class SocketWrapper:
         self._socket = socket
 
     @property
-    def socket(self):
+    def handle(self):
         return self._socket
 
     def send_all(self, data):

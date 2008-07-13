@@ -54,7 +54,7 @@ class ConnectionListener(object):
         if no connection was pending. This method does not block.
         """
         try:
-            in_s = self._socket.accept()
+            (in_s, remote_addr) = self._socket.accept()
             return Connection(self._socket_wrapper(in_s))
         except socket.error, (errno, msg):
             if errno == 11:
