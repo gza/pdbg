@@ -13,7 +13,6 @@ class Config(dict, Singleton):
 
     def __init__(self):
         self.update({
-            'timeout_interval': 400
         })
 
     def __getitem__(self, key):

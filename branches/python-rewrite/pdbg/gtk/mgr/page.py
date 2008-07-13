@@ -19,7 +19,13 @@ class PageManager(Manager):
         self._connection = connection
         self._conn_mgr = ConnectionManager()
         self._conn_mgr.setup(connection)
-        self._conn_mgr.add_observer('init_packet', self.on_init_packet)
+
+        self._conn_mgr.add_observer( \
+            command_sent=self.on_command_sent, \
+            response_received=self.on_response_received, \
+            init_packet=self.on_init_packet, \
+            init_source=self.on_init_source, \
+            init_status=self.on_init_status)
 
         # Add a hook in the gobject main loop to monitor for incoming data
         # on the socket.
@@ -28,11 +34,19 @@ class PageManager(Manager):
             gobject.IO_IN | gobject.IO_HUP | gobject.IO_ERR, \
             self.on_io_event)
 
+        self._view = PageView()
+
     def on_io_event(self, source, condition):
         if condition == gobject.IO_IN:
             self._conn_mgr.process_response()
         # TODO: handle other conditions
         return True
+
+    def on_command_sent(self, mgr, command):
+        self._view['log'].log('>>', str(command))
+
+    def on_response_received(self, mgr, response):
+        self._view['log'].log('<<', str(response))
 
     def on_init_packet(self, mgr, init, remote_addr):
         conn_info = init.get_engine_info()
@@ -40,12 +54,16 @@ class PageManager(Manager):
             'remote_port': remote_addr[1] }
         conn_info.update(addr_info)
 
-        self._view = PageView(conn_info)
+        self._view.set_connection_info(conn_info)
+
         outer_box = self._view['outer_box']
         tab_label = self._view['tab_label']
 
         app_view = AppView.get_instance()
         self.page_num = app_view['notebook'].append_page(outer_box, tab_label)
 
-        # TODO: move
-        outer_box.show_all()
+    def on_init_source(self, mgr, response):
+        print response.source
+
+    def on_init_status(self, mgr, response):
+        self._view['outer_box'].show_all()

@@ -229,6 +229,6 @@ def factory(xml):
     gbls = globals()
     if gbls.has_key(class_name):
         klass = gbls[class_name]
-        if isinstance(klass, ClassType):
+        if isinstance(klass, type):
             return klass(response.xml_root)
     return response
