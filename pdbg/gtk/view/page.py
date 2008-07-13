@@ -7,6 +7,7 @@ __version__ = "$Id$"
 
 import gtk
 from base import View, widget
+from ..widget.textlog import TextLog
 
 def _build_tab_label(info):
     label = '[' + info['remote_ip'] + ']'
@@ -18,19 +19,45 @@ def _build_tab_label(info):
 
 class PageView(View):
 
-    def __init__(self, connection_info):
-        self._connection_info = connection_info
-        super(PageView, self).__init__()
+    def set_connection_info(self, conn_info):
+        self['tab_label'].set_text(_build_tab_label(conn_info))
 
     @widget
     def _tab_label(self):
-        return gtk.Label('XXX')
+        return gtk.Label('')
+
+    @widget
+    def _log(self):
+        log = TextLog()
+        return log
+
+    @widget
+    def _log_scroll(self):
+        scroll = gtk.ScrolledWindow()
+        scroll.add(self._log())
+        return scroll
+
+    @widget
+    def _notebook(self):
+        notebook = gtk.Notebook()
+        notebook.set_tab_pos(gtk.POS_BOTTOM)
+        notebook.append_page(self._log_scroll(), gtk.Label('Log'))
+        # Set the minimum requested size
+        notebook.set_size_request(-1, 200)
+        return notebook
+
+    @widget
+    def _inner_box(self):
+        box = gtk.VPaned()
+        box.pack1(gtk.Label('TOP'), True, False)
+        box.pack2(self._notebook(), False, False)
+        return box
 
     @widget
     def _outer_box(self):
         box = gtk.HPaned()
         box.pack1(gtk.Label('LEFT'), False, False)
-        box.pack2(gtk.Label('RIGHT'), True, False)
+        box.pack2(self._inner_box(), True, False)
         return box
 
     def _setup(self):

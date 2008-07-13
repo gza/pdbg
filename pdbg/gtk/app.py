@@ -39,8 +39,8 @@ class App(Observable, Singleton):
         info_lbl.set_text(info_lbl.get_text() % (listener.ip_address, \
             listener.port))
 
-        # Register a timeout function to poll for incoming connections.
-        gobject.timeout_add(config['timeout_interval'], self.on_timeout)
+        # Register a function to poll for incoming connections.
+        gobject.idle_add(self.on_idle)
 
     def run(self):
         self._setup()
@@ -52,7 +52,7 @@ class App(Observable, Singleton):
         about_view['about_dialog'].run()
         about_view['about_dialog'].hide()
 
-    def on_timeout(self):
+    def on_idle(self):
         ListenerManager.get_instance().accept_connection()
         return True
 
