@@ -70,6 +70,13 @@ class CanInteract(ConnectionState):
     def run(klass, mgr, response):
         return None
 
+class AwaitingStatus(ConnectionState):
+
+    @classmethod
+    @expected_response(StatusResponse)
+    def run(klass, mgr, response):
+        return CanInteract
+
 class CannotInteract(ConnectionState):
 
     @classmethod
@@ -102,31 +109,31 @@ class ConnectionManager(Manager):
         self._connection = connection
 
     def send_command(self, command_str, arguments=[], data=None, \
-        req_state=CanInteract, change_state=CannotInteract):
-        if req_state != None and self._state != req_state:
+        require=CanInteract, change_to=CannotInteract):
+        if require != None and self._state != require:
             raise ConnectionManagerException, "cannot send command in current state"
         self.send_command_stateless(command_str, arguments, data)
-        if change_state != None:
-            self._change_state(change_state)
+        if change_to != None:
+            self._change_state(change_to)
 
     def send_command_stateless(self, command_str, arguments=[], data=None):
         command = self.connection.send_command(command_str, arguments, data)
         self.fire('command_sent', command)
 
     def send_run(self):
-        self.send_command('run')
+        self.send_command('run', change_to=AwaitingStatus)
 
     def send_detach(self):
-        self.send_command('detach')
+        self.send_command('detach', change_to=AwaitingStatus)
 
     def send_step_into(self):
-        self.send_command('step_into')
+        self.send_command('step_into', change_to=AwaitingStatus)
 
     def send_step_over(self):
-        self.send_command('step_over')
+        self.send_command('step_over', change_to=AwaitingStatus)
 
     def send_step_out(self):
-        self.send_command('step_out')
+        self.send_command('step_out', change_to=AwaitingStatus)
 
     def process_response(self):
         response = self._connection.recv_response()
