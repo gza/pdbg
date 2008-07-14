@@ -10,6 +10,7 @@ import os.path
 from base import View, widget
 from ...app.config import Config
 from ...app.patterns import Singleton
+from toolbar import ToolbarView
 
 class AppView(View, Singleton):
 
@@ -54,34 +55,6 @@ class AppView(View, Singleton):
         menu_bar.append(self._help_menu_item())
         return menu_bar
 
-    def _setup_tool_bar(self, tool_bar):
-        asset_dir = Config.get_instance()['asset_dir']
-
-        button_data = (
-            ('run', 'Run'),
-            ('detach', 'Detach'),
-            ('-', '-'),
-            ('step_into', 'Step Into'),
-            ('step_over', 'Step Over'),
-            ('step_out', 'Step Out')
-        )
-
-        for (name, label) in button_data:
-            if name != '-':
-                key = 'toolbar_' + name
-                img = gtk.image_new_from_file(os.path.join(asset_dir, name + '.png'))
-                self[key] = gtk.ToolButton(img, label)
-                item = self[key]
-            else:
-                item = gtk.SeparatorToolItem()
-            tool_bar.insert(item, -1)
-
-    @widget
-    def _tool_bar(self):
-        tool_bar = gtk.Toolbar()
-        self._setup_tool_bar(tool_bar)
-        return tool_bar
-
     @widget
     def _info_page_label(self):
         return gtk.Label("Listening for connections on %s:%s ...")
@@ -98,9 +71,11 @@ class AppView(View, Singleton):
 
     @widget
     def _outer_vbox(self):
+        toolbar_view = ToolbarView.get_instance()
+
         vbox = gtk.VBox()
         vbox.pack_start(self._menu_bar(), False, True)
-        vbox.pack_start(self._tool_bar(), False, True)
+        vbox.pack_start(toolbar_view['toolbar'], False, True)
         vbox.pack_start(self._notebook(), True, True)
         return vbox
 

@@ -36,11 +36,24 @@ class PageManager(Manager):
 
         self._view = PageView()
 
+        app_view = AppView.get_instance()
+        app_view['notebook'].connect('page-reordered', self.on_page_reordered)
+
+    @property
+    def conn_mgr(self):
+        return self._conn_mgr
+
     def on_io_event(self, source, condition):
         if condition == gobject.IO_IN:
             self._conn_mgr.process_response()
         # TODO: handle other conditions
         return True
+
+    def on_page_reordered(self, notebook, child, page_num):
+        # If the page ordering of the notebook is modified, ensure that the
+        # _page_num variable is updated accordingly.
+        if child == self._view['outer_box']:
+            self._page_num = page_num
 
     def on_command_sent(self, mgr, command):
         self._view['log'].log('>>', str(command))
