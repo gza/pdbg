@@ -13,6 +13,9 @@ class Config(dict, Singleton):
 
     def __init__(self):
         self.update({
+            'win_width': 800,
+            'win_height': 600,
+            'app_title': 'pDBG - A DBGp Debugger Frontend (v0.0)',
         })
 
     def __getitem__(self, key):

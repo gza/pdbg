@@ -81,9 +81,12 @@ class AppView(View, Singleton):
 
     @widget
     def _window(self):
+        config = Config.get_instance()
+
         win = gtk.Window()
+        win.set_title(config['app_title'])
         win.set_position(gtk.WIN_POS_CENTER)
-        win.set_default_size(800, 600)
+        win.set_default_size(config['win_width'], config['win_height'])
         win.add(self._outer_vbox())
         return win
 
