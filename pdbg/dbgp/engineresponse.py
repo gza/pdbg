@@ -139,6 +139,23 @@ class SourceResponse(EngineResponse):
         """Return the source code of the requested script file."""
         return b64decode(self.get_xpath_value('/dp:response'))
 
+class StackGetResponse(EngineResponse):
+    """Represent a response to a stack_get command."""
+
+    def get_stack_elements(self):
+        """Return a list of stack elements.
+
+        Each element of the list is a dict object, with properties such as 
+        level, type, and filename.
+        """
+        results = self.xpath('/dp:response/dp:stack')
+        elements = []
+        for result in results:
+            element_dict = {}
+            element_dict.update(result.attrib)
+            elements.append(element_dict)
+        return elements
+
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1
 RESPONSE_BUILT = 2
@@ -210,13 +227,16 @@ class EngineResponseBuilder(object):
         else:
             return None
 
+def _underscore_to_caps(s):
+    return re.sub('(^|_)([a-z])', lambda m: m.group(2).upper(), s)
+
 def _command_to_class_name(command):
     status_cmds = ('run', 'step_into', 'step_over', 'step_out', 
         'stop', 'detach')
     if command in status_cmds:
         return 'StatusResponse'
     else:
-        return command.capitalize() + 'Response'
+        return _underscore_to_caps(command) + 'Response'
 
 def factory(xml):
     """Instantiate an EngineResponse subclass given an xml string."""

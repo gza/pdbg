@@ -18,7 +18,8 @@ _event_names = (
     'response_received',
     'init_packet',
     'init_source',
-    'init_status'
+    'init_status',
+    'line_changed',
 )
 
 def expected_response(type):
@@ -75,6 +76,20 @@ class AwaitingStatus(ConnectionState):
     @classmethod
     @expected_response(StatusResponse)
     def run(klass, mgr, response):
+        if response.status == 'break':
+            mgr.send_command_stateless('stack_get', { '-d': '0' })
+            return AwaitingStackGetFollowup
+        else:
+            mgr.fire('line_changed', None)
+            return CanInteract
+
+class AwaitingStackGetFollowup(ConnectionState):
+
+    @classmethod
+    @expected_response(StackGetResponse)
+    def run(klass, mgr, response):
+        stack = response.get_stack_elements()
+        mgr.fire('line_changed', int(stack[0]['lineno']))
         return CanInteract
 
 class CannotInteract(ConnectionState):

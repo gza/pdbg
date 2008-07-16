@@ -55,6 +55,24 @@ _source_response_xml = \
           encoding="base64"><![CDATA[Zm9v]]></response>
 """
 
+_stack_get_response_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="stack_get" 
+          transaction_id="1">
+    <stack where="{main}" 
+           level="0" 
+           type="file" 
+           filename="file:///home/chris/tmp/test.php" 
+           lineno="3" />
+    <stack level="1" 
+           type="file" 
+           filename="file:///home/chris/tmp/test2.php" 
+           lineno="3" />
+</response>
+"""
+
 _unknown_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
 <response xmlns="urn:debugger_protocol_v1" 
@@ -141,6 +159,16 @@ class TestSourceResponseClass(unittest.TestCase):
     def test_source(self):
         r = SourceResponse(_source_response_xml)
         self.assertEqual(r.source, 'foo')
+
+class TestStackGetResponseClass(unittest.TestCase):
+    """Test the StackGetResponse class."""
+
+    def test_get_stack_elements(self):
+        r = StackGetResponse(_stack_get_response_xml)
+        stack = r.get_stack_elements()
+        self.assertEqual(len(stack), 2)
+        self.assertEqual(stack[0]['where'], '{main}')
+        self.assertEqual(stack[1]['level'], '1')
 
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""
