@@ -26,7 +26,8 @@ class PageManager(Manager):
             init_packet=self.on_init_packet, \
             init_source=self.on_init_source, \
             init_status=self.on_init_status, \
-            line_changed=self.on_line_changed)
+            stack_update=self.on_stack_update, \
+            state_changed=self.on_connection_state_changed)
 
         # Add a hook in the gobject main loop to monitor for incoming data
         # on the socket.
@@ -87,8 +88,9 @@ class PageManager(Manager):
         app_view = AppView.get_instance()
         app_view['notebook'].set_current_page(self._page_num)
 
-    def on_line_changed(self, mgr, line_number):
-        if line_number == None:
+    def on_stack_update(self, mgr, stack):
+        self._view['source_view'].set_current_line(stack[0]['lineno']-1)
+
+    def on_connection_state_changed(self, mgr, old_state, new_state):
+        if new_state == 'stopped':
             self._view['source_view'].unset_current_line()
-        else:
-            self._view['source_view'].set_current_line(line_number-1)

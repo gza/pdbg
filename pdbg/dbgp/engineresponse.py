@@ -153,6 +153,10 @@ class StackGetResponse(EngineResponse):
         for result in results:
             element_dict = {}
             element_dict.update(result.attrib)
+            if element_dict.has_key('lineno'):
+                element_dict['lineno'] = int(element_dict['lineno'])
+            if element_dict.has_key('level'):
+                element_dict['level'] = int(element_dict['level'])
             elements.append(element_dict)
         return elements
 
