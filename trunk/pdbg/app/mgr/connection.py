@@ -19,7 +19,7 @@ _event_names = (
     'init_packet',
     'init_source',
     'init_status',
-    'line_changed',
+    'stack_update',
 )
 
 def expected_response(type):
@@ -71,17 +71,26 @@ class CanInteract(ConnectionState):
     def run(klass, mgr, response):
         return None
 
+class Stopped(ConnectionState):
+
+    @classmethod
+    def run(klass, mgr, response):
+        return None
+
 class AwaitingStatus(ConnectionState):
 
     @classmethod
     @expected_response(StatusResponse)
     def run(klass, mgr, response):
-        if response.status == 'break':
-            mgr.send_command_stateless('stack_get', { '-d': '0' })
+        status = response.status
+        if status == 'break':
+            mgr.send_command_stateless('stack_get')
             return AwaitingStackGetFollowup
         else:
-            mgr.fire('line_changed', None)
-            return CanInteract
+            if status == 'stopping' or status == 'stopped':
+                return Stopped
+            elif status == 'running':
+                raise ConnectionManagerException, "Async is currently not supported."
 
 class AwaitingStackGetFollowup(ConnectionState):
 
@@ -89,7 +98,7 @@ class AwaitingStackGetFollowup(ConnectionState):
     @expected_response(StackGetResponse)
     def run(klass, mgr, response):
         stack = response.get_stack_elements()
-        mgr.fire('line_changed', int(stack[0]['lineno']))
+        mgr.fire('stack_update', stack)
         return CanInteract
 
 class CannotInteract(ConnectionState):
