@@ -16,10 +16,9 @@ _event_names = (
     'state_changed',
     'command_sent',
     'response_received',
+    'response_handled',
     'init_packet',
-    'init_source',
-    'init_status',
-    'stack_update',
+    'can_interact',
 )
 
 def expected_response(type):
@@ -30,6 +29,11 @@ def expected_response(type):
             return fn(*arguments, **keywords)
         return check_type
     return decorator
+
+def _trans_id_condition(id):
+    def condition(conn_mgr, resp):
+        return hasattr(resp, 'transaction_id') and resp.transaction_id == id
+    return condition
 
 class ConnectionState(object):
 
@@ -45,37 +49,19 @@ class AwaitingInit(ConnectionState):
     def run(klass, mgr, init):
         remote_address = mgr.connection.socket.handle.getpeername()
         mgr.fire('init_packet', init, remote_address)
-        mgr.send_command_stateless('source', { '-f': init.file_uri })
-        return AwaitingInitSource
+        return Ready
 
-class AwaitingInitSource(ConnectionState):
-
-    @classmethod
-    @expected_response(SourceResponse)
-    def run(klass, mgr, response):
-        mgr.fire('init_source', response)
-        mgr.send_command_stateless('status')
-        return AwaitingInitStatus
-
-class AwaitingInitStatus(ConnectionState):
-
-    @classmethod
-    @expected_response(StatusResponse)
-    def run(klass, mgr, response):
-        mgr.fire('init_status', response)
-        return CanInteract
-
-class CanInteract(ConnectionState):
+class Ready(ConnectionState):
 
     @classmethod
     def run(klass, mgr, response):
-        return None
+        pass
 
 class Stopped(ConnectionState):
 
     @classmethod
     def run(klass, mgr, response):
-        return None
+        pass
 
 class AwaitingStatus(ConnectionState):
 
@@ -83,29 +69,13 @@ class AwaitingStatus(ConnectionState):
     @expected_response(StatusResponse)
     def run(klass, mgr, response):
         status = response.status
-        if status == 'break':
-            mgr.send_command_stateless('stack_get')
-            return AwaitingStackGetFollowup
+        if status == 'starting' or status == 'break':
+            return Ready
         else:
             if status == 'stopping' or status == 'stopped':
                 return Stopped
             elif status == 'running':
                 raise ConnectionManagerException, "Async is currently not supported."
-
-class AwaitingStackGetFollowup(ConnectionState):
-
-    @classmethod
-    @expected_response(StackGetResponse)
-    def run(klass, mgr, response):
-        stack = response.get_stack_elements()
-        mgr.fire('stack_update', stack)
-        return CanInteract
-
-class CannotInteract(ConnectionState):
-
-    @classmethod
-    def run(klass, mgr, response):
-        return CanInteract
 
 class ConnectionManagerException(Exception):
     pass
@@ -115,6 +85,7 @@ class ConnectionManager(Manager):
     def __init__(self):
         super(Manager, self).__init__()
         self._state = AwaitingInit
+        self._num_unresponded = 1
         self.register_event(*_event_names)
 
     def _change_state(self, state):
@@ -127,42 +98,49 @@ class ConnectionManager(Manager):
 
     @property
     def can_interact(self):
-        return self._state == CanInteract
+        return self._num_unresponded == 0 and self._state == Ready
 
     def setup(self, connection):
         self._connection = connection
 
     def send_command(self, command_str, arguments=[], data=None, \
-        require=CanInteract, change_to=CannotInteract):
-        if require != None and self._state != require:
-            raise ConnectionManagerException, "cannot send command in current state"
-        self.send_command_stateless(command_str, arguments, data)
+        change_to=None, observer=None):
+        could_interact = self.can_interact
+        command = self.connection.send_command(command_str, arguments, data)
+        self._num_unresponded += 1
+        if observer != None:
+            condition = _trans_id_condition(command.transaction_id)
+            self.add_observer('response_handled', observer, condition, True)
+        self.fire('command_sent', command)
         if change_to != None:
             self._change_state(change_to)
+        if could_interact and not self.can_interact:
+            self.fire('can_interact', False)
 
-    def send_command_stateless(self, command_str, arguments=[], data=None):
-        command = self.connection.send_command(command_str, arguments, data)
-        self.fire('command_sent', command)
+    def send_status(self, ob=None):
+        self.send_command('status', change_to=AwaitingStatus, observer=ob)
 
-    def send_run(self):
-        self.send_command('run', change_to=AwaitingStatus)
+    def send_continuation(self, name, ob=None):
+        if name not in ('run','detach','step_into','step_over','step_out'):
+            raise ConnectionManagerException, "%s is not a continuation command" % (name,)
+        self.send_command(name, change_to=AwaitingStatus, observer=ob)
 
-    def send_detach(self):
-        self.send_command('detach', change_to=AwaitingStatus)
+    def send_stack_get(self, ob=None):
+        self.send_command('stack_get', observer=ob)
 
-    def send_step_into(self):
-        self.send_command('step_into', change_to=AwaitingStatus)
-
-    def send_step_over(self):
-        self.send_command('step_over', change_to=AwaitingStatus)
-
-    def send_step_out(self):
-        self.send_command('step_out', change_to=AwaitingStatus)
+    def send_source(self, file_uri, ob=None):
+        self.send_command('source', { '-f': file_uri }, observer=ob)
 
     def process_response(self):
         response = self._connection.recv_response()
         if response != None:
+            self._num_unresponded -= 1
             self.fire('response_received', response)
             new_state = self._state.run(self, response)
             if new_state != None:
                 self._change_state(new_state)
+            self.fire('response_handled', response)
+            # if can_interact is True here, then it must have changed as a 
+            # result of this call to process_response.
+            if self.can_interact:
+                self.fire('can_interact', True)

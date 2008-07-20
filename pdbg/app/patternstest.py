@@ -81,6 +81,25 @@ class TestObservableClass(unittest.TestCase):
         o.fire('foo').fire('bar', 2)
         self.assertEqual(f.times, 3)
 
+    def test_only_once(self):
+        f = _new_inc_observer()
+        g = _new_inc_observer()
+        o = Observable()
+        o.register_event('foo')
+        o.add_observer('foo', f, once=True)
+        o.add_observer('foo', g)
+        o.fire('foo').fire('foo')
+        self.assertEqual(f.times, 1)
+        self.assertEqual(g.times, 2)
+
+    def test_condition(self):
+        f = _new_inc_observer()
+        o = Observable()
+        o.register_event('foo')
+        o.add_observer('foo', f, condition=lambda x, c: c > 1)
+        o.fire('foo', 2).fire('foo', 1)
+        self.assertEqual(f.times, 2)
+
     def test_remove_observer(self):
         f1 = _new_inc_observer()
         f2 = _new_inc_observer()

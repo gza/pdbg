@@ -62,11 +62,23 @@ class Observable(object):
             raise LookupError, "Event %s not registered." % (name,)
         arguments = list(arguments)
         arguments.insert(0, self)
-        for observer in self._events[name]:
-            observer(*arguments)
+        keep = []
+        for curr in self._events[name]:
+            called = False
+            if curr['condition'] != None:
+                if curr['condition'](*arguments):
+                    curr['observer'](*arguments)
+                    called = True
+            else:
+                curr['observer'](*arguments)
+                called = True
+            if not called or not curr['once']:
+                keep.append(curr)
+        self._events[name] = keep
         return self
 
-    def add_observer(self, name=None, observer=None, **keywords):
+    def add_observer(self, name=None, observer=None, condition=None, \
+        once=False, **keywords):
         """Add an event observer.
 
         Keyword arguments for this method will be handled as follows: keys are
@@ -76,7 +88,11 @@ class Observable(object):
             if not self._events.has_key(name):
                 raise LookupError, "Event %s not registered." % (name,)
             if callable(observer):
-                self._events[name].append(observer)
+                self._events[name].append({
+                    'observer': observer,
+                    'condition': condition,
+                    'once': once
+                })
         for (name, observer) in keywords.items():
             self.add_observer(name, observer)
         return self
@@ -88,8 +104,8 @@ class Observable(object):
         """
         if not self._events.has_key(name):
             raise LookupError, "Event %s not registered." % (name,)
-        for (idx, curr_observer) in enumerate(self._events[name]):
-            if curr_observer == observer:
+        for (idx, curr) in enumerate(self._events[name]):
+            if curr['observer'] == observer:
                 del self._events[name][idx]
                 return True
         return False
