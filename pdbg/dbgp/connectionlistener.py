@@ -40,6 +40,9 @@ class ConnectionListener(object):
 
     def _init_socket(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # The setsockopt below prevents address already in use errors.
+        # See http://www.unixguide.net/network/socketfaq/4.5.shtml
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._socket.bind((self._ip_address, self._port))
         # The parameter to listen is the max. number of connections that will
         # be backlogged. According to the python docs, this should not be more
