@@ -26,3 +26,7 @@ class SocketWrapper:
     def is_data_available(self):
         (r, w, e) = select([self._socket], [], [], 0)
         return len(r) > 0
+
+    def close(self):
+        self._socket.shutdown(socket.SHUT_RDWR)
+        self._socket.close()

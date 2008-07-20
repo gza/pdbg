@@ -18,6 +18,8 @@ class PageManager(Manager):
     def __init__(self):
         super(Manager, self).__init__()
         self._source_cache = {}
+        self._init_file_uri = None
+        self._last_stack = None
 
     def setup(self, connection):
         """Setup the manager."""
@@ -52,6 +54,8 @@ class PageManager(Manager):
     def on_io_event(self, source, condition):
         if condition == gobject.IO_IN:
             self._conn_mgr.process_response()
+        elif condition == gobject.IO_HUP:
+            self._conn_mgr.close_connection()
         # TODO: handle other conditions
         return True
 
@@ -81,9 +85,12 @@ class PageManager(Manager):
         app_view = AppView.get_instance()
         self._page_num = app_view['notebook'].append_page(outer_box, tab_label)
 
-        mgr.send_source(init.file_uri, self.on_init_source)
+        self._init_file_uri = init.file_uri
+        mgr.send_source(self._init_file_uri, self.on_init_source)
 
     def on_init_source(self, mgr, response):
+        source = response.source
+        self._source_cache[self._init_file_uri] = source
         self._view.set_source(response.source)
         mgr.send_status(self.on_init_status)
 
@@ -104,15 +111,20 @@ class PageManager(Manager):
     def on_cont_stack_get(self, mgr, response):
         # check the source file in the source view currently, and
         # change it if it differs from the top of the stack.
-
         stack = response.get_stack_elements()
-        self._view['source_view'].set_current_line(stack[0]['lineno']-1)
+        self._last_stack = stack
+        top = stack[0]
+        
+        if self._source_cache.has_key(top['filename']):
+            self._view.set_source(self._source_cache[top['filename']])
+            self._view['source_view'].set_current_line(top['lineno']-1)
+        else:
+            file_uri = top['filename']
+            mgr.send_source(file_uri, self.on_source_update_view)
 
-        #current = stack[0]
-        #
-        #if self._source_cache.has_key(current['filename']):
-        #    self._view.set_source(self._source_cache[current['filename']])
-        #else:
-        #    self._conn_mgr.add_observer('source', self.on_source_update_view, \
-        #        once_only=True)
-        #    self._conn_mgr.send_source(current['filename'])
+    def on_source_update_view(self, mgr, response):
+        source = response.source
+        top = self._last_stack[0]
+        self._source_cache[top['filename']] = source
+        self._view.set_source(source)
+        self._view['source_view'].set_current_line(top['lineno']-1)

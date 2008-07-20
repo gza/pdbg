@@ -55,13 +55,13 @@ class Ready(ConnectionState):
 
     @classmethod
     def run(klass, mgr, response):
-        pass
+        return None
 
 class Stopped(ConnectionState):
 
     @classmethod
     def run(klass, mgr, response):
-        pass
+        return None
 
 class AwaitingStatus(ConnectionState):
 
@@ -73,6 +73,7 @@ class AwaitingStatus(ConnectionState):
             return Ready
         else:
             if status == 'stopping' or status == 'stopped':
+                mgr.close_connection()
                 return Stopped
             elif status == 'running':
                 raise ConnectionManagerException, "Async is currently not supported."
@@ -102,6 +103,9 @@ class ConnectionManager(Manager):
 
     def setup(self, connection):
         self._connection = connection
+
+    def close_connection(self):
+        self.connection.close()
 
     def send_command(self, command_str, arguments=[], data=None, \
         change_to=None, observer=None):

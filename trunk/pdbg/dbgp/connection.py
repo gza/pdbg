@@ -72,3 +72,6 @@ class Connection(object):
             if response != None:
                 return response
         return None
+
+    def close(self):
+        self._socket.close()
