@@ -38,8 +38,7 @@ class ToolbarManager(Manager, Singleton):
         """A toolbar button was clicked."""
         if self._page_mgr == None:
             raise ToolbarManagerException, "buttons should be desensitized."
-        method_name = 'send_' + command_name
-        getattr(self._page_mgr.conn_mgr, method_name)()
+        self._page_mgr.send_continuation(command_name)
 
     def on_page_mgr_deactivated(self, pages_mgr, page_mgr):
         """Called when a page manager is not the focus of the shared ui.
@@ -49,8 +48,8 @@ class ToolbarManager(Manager, Singleton):
         """
         if self._page_mgr != None:
             conn_mgr = self._page_mgr.conn_mgr
-            conn_mgr.remove_observer('state_changed', \
-                self.on_conn_state_changed)
+            conn_mgr.remove_observer('can_interact', \
+                self.on_conn_can_interact)
         self._page_mgr = None
         toolbar_view = ToolbarView.get_instance()
         toolbar_view.sensitize_continuation_buttons(False)
@@ -65,12 +64,11 @@ class ToolbarManager(Manager, Singleton):
         toolbar_view.sensitize_continuation_buttons( \
             page_mgr.conn_mgr.can_interact)
 
-        page_mgr.conn_mgr.add_observer('state_changed', \
-            self.on_conn_state_changed)
+        page_mgr.conn_mgr.add_observer('can_interact', \
+            self.on_conn_can_interact)
         self._page_mgr = page_mgr
 
-    def on_conn_state_changed(self, page_mgr, old_state, new_state):
-        """State of the connection has changed."""
+    def on_conn_can_interact(self, conn_mgr, can_interact):
+        """Connection received a response."""
         toolbar_view = ToolbarView.get_instance()
-        can_interact = (new_state == 'can_interact')
         toolbar_view.sensitize_continuation_buttons(can_interact)
