@@ -35,6 +35,11 @@ class SourceView(gtksourceview.View):
         buffer.set_language(php_lang)
         buffer.set_highlight_syntax(True)
 
+        mgr = gtksourceview.style_scheme_manager_get_default()
+        style_scheme = mgr.get_scheme('classic')
+        if style_scheme:
+            buffer.set_style_scheme(style_scheme)
+
         self.set_show_line_numbers(True)
         self.set_editable(False)
         self.set_cursor_visible(False)
