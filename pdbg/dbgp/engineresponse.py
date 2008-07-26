@@ -70,7 +70,7 @@ class EngineResponse(object):
 
     def xpath(self, query):
         """Execute an XPath query on the response XML root."""
-        return self._xml_root.xpath(query, _response_namespaces)
+        return self._xml_root.xpath(query, namespaces=_response_namespaces)
 
     def get_xpath_value(self, query):
         """Returns the string value of the first result of an XPath query."""
