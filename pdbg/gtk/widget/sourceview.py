@@ -68,7 +68,7 @@ class SourceView(gtksourceview.View):
     def set_current_source(self, source):
         self._current_source = source
         self.unset_current_line()
-        self.get_buffer().set_text(self._current_source.get_text())
+        self.get_buffer().set_text(self._current_source.text)
         self.refresh_breakpoints()
 
     def get_current_source(self):
