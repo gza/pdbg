@@ -6,9 +6,11 @@
 __version__ = "$Id$"
 
 import gobject
+import gtk
 from ...app.patterns import Manager
 from ...app.mgr.connection import ConnectionManager
 from ...app.config import Config
+from ...app.source import Source
 from ...dbgp.engineresponse import StatusResponse, StackGetResponse
 from ..view.app import AppView
 from ..view.page import PageView
@@ -40,6 +42,8 @@ class PageManager(Manager):
             self.on_io_event)
 
         self._view = PageView()
+        self._view['source_view'].connect('button-press-event', \
+            self.on_button_press_on_source_view)
 
         app_view = AppView.get_instance()
         app_view['notebook'].connect('page-reordered', self.on_page_reordered)
@@ -65,6 +69,20 @@ class PageManager(Manager):
         if child == self._view['outer_box']:
             self._page_num = page_num
 
+    def on_button_press_on_source_view(self, source_view, ev):
+        # ensure that click occurred on the left gutter
+        left_gutter = source_view.get_window(gtk.TEXT_WINDOW_LEFT)
+        if ev.window == left_gutter and ev.button == 1:
+            iter = source_view.window_coords_to_iter(int(ev.x), int(ev.y))
+            line_num = iter.get_line()
+            source = source_view.current_source
+            if source:
+                if not source.has_breakpoint(line_num):
+                    source.add_breakpoint(line_num)
+                    source_view.refresh_breakpoints()
+                else:
+                    pass
+
     def on_command_sent(self, mgr, command):
         self._view['log'].log('>>', str(command))
 
@@ -89,9 +107,9 @@ class PageManager(Manager):
         mgr.send_source(self._init_file_uri, self.on_init_source)
 
     def on_init_source(self, mgr, response):
-        source = response.source
+        source = Source(response.source)
         self._source_cache[self._init_file_uri] = source
-        self._view.set_source(response.source)
+        self._view['source_view'].current_source = source
         mgr.send_status(self.on_init_status)
 
     def on_init_status(self, mgr, response):
@@ -116,15 +134,16 @@ class PageManager(Manager):
         top = stack[0]
         
         if self._source_cache.has_key(top['filename']):
-            self._view.set_source(self._source_cache[top['filename']])
-            self._view['source_view'].set_current_line(top['lineno']-1)
+            self._view['source_view'].current_source = \
+                self._source_cache[top['filename']]
+            self._view['source_view'].set_current_line(top['lineno'] - 1)
         else:
             file_uri = top['filename']
             mgr.send_source(file_uri, self.on_source_update_view)
 
     def on_source_update_view(self, mgr, response):
-        source = response.source
+        source = Source(response.source)
         top = self._last_stack[0]
         self._source_cache[top['filename']] = source
-        self._view.set_source(source)
-        self._view['source_view'].set_current_line(top['lineno']-1)
+        self._view['source_view'].current_source = source
+        self._view['source_view'].set_current_line(top['lineno'] - 1)
