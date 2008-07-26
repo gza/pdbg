@@ -6,6 +6,7 @@
 __version__ = "$Id$"
 
 import gtk
+import re
 from base import View, widget
 from ..widget.textlog import TextLog
 from ..widget.sourceview import SourceView
@@ -22,9 +23,6 @@ class PageView(View):
 
     def set_connection_info(self, conn_info):
         self['tab_label'].set_text(_build_tab_label(conn_info))
-
-    def set_source(self, source_text):
-        self['source_view'].get_buffer().set_text(source_text)
 
     @widget
     def _tab_label(self):

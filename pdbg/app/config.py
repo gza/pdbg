@@ -12,24 +12,17 @@ from patterns import Singleton
 class Config(dict, Singleton):
 
     def __init__(self):
+        d = os.path.dirname
+        app_dir = d(d(d(os.path.abspath(__file__))))
+        asset_dir = os.path.join(app_dir, 'assets')
+
         self.update({
             'win_width': 800,
             'win_height': 600,
             'app_title': 'pDBG - A DBGp Debugger Frontend (v0.0)',
+            'app_dir': app_dir,
+            'asset_dir': asset_dir
         })
 
-    def __getitem__(self, key):
-        method_name = '_prop_' + str(key)
-        all_methods = inspect.getmembers(self, inspect.ismethod)
-        methods = [m for (n, m) in all_methods if n == method_name]
-        if len(methods) > 0:
-            return methods[0]()
-        else:
-            return dict.__getitem__(self, key)
-
-    def _prop_app_dir(self):
-        d = os.path.dirname
-        return d(d(d(os.path.abspath(__file__))))
-
-    def _prop_asset_dir(self):
-        return os.path.join(self['app_dir'], 'assets')
+    def get_image_path(self, name):
+        return os.path.join(self['asset_dir'], name + '.png')
