@@ -135,6 +135,10 @@ class ConnectionManager(Manager):
     def send_source(self, file_uri, ob=None):
         self.send_command('source', { '-f': file_uri }, observer=ob)
 
+    def send_line_breakpoint_set(self, file_uri, line_num, ob=None):
+        self.send_command('breakpoint_set', \
+            { '-t': 'line', '-f': file_uri, '-n': line_num }, observer=ob)
+
     def process_response(self):
         response = self._connection.recv_response()
         if response != None:

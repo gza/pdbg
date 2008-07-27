@@ -5,35 +5,55 @@
 
 __version__ = "$Id$"
 
-from copy import copy
+from copy import copy, deepcopy
 
 class Source(object):
 
-    def __init__(self, text):
+    def __init__(self, file_uri, text):
+        self._file_uri = file_uri
         self._text = text
-        self._breakpoints = set()
+        self._breakpoints = {}
 
-    def add_breakpoint(self, line_num):
-        """Add a breakpoint to the source file.
+    def add_breakpoint(self, line_num, id, type):
+        """Add a breakpoint to the source file."""
+        id = str(id)
+        breakpoint = { 
+            'line_num': int(line_num),
+            'id': id,
+            'type': str(type)
+        }
+        self._breakpoints[id] = breakpoint
 
-        No change is made if the breakpoint was previously set.
-        """
-        line_num = int(line_num)
-        self._breakpoints.add(line_num)
-
-    def remove_breakpoint(self, line_num):
-        """Remove a breakpoint from a specified line (if present)."""
-        self._breakpoints.discard(line_num)
+    def remove_breakpoint(self, id):
+        """Remove a breakpoint of the specified id (if present)."""
+        id = str(id)
+        if self._breakpoints.has_key(id):
+            del self._breakpoints[id]
 
     def get_breakpoints(self):
         """Return a copy of the breakpoints set on the file."""
-        return copy(self._breakpoints)
+        return deepcopy(self._breakpoints)
 
-    def has_breakpoint(self, line_num):
-        """Return True if a breakpoint exists on the specified line."""
-        return int(line_num) in self._breakpoints
+    def has_breakpoint(self, id):
+        """Return True if a breakpoint of the specified id is set."""
+        return self._breakpoints.has_key(str(id))
+
+    def get_breakpoints_on_line(self, line_num):
+        """Return all breakpoints on a specified line."""
+        line_num = int(line_num)
+        result = []
+        for id in self._breakpoints:
+            breakpoint = self._breakpoints[id]
+            if breakpoint['line_num'] == line_num:
+                result.append(copy(breakpoint))
+        return result
 
     @property
     def text(self):
         """Return the source text."""
         return self._text
+
+    @property
+    def file_uri(self):
+        """Return the source file uri."""
+        return self._file_uri

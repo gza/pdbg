@@ -38,8 +38,10 @@ class SourceView(gtksourceview.View):
         buffer.set_highlight_syntax(True)
         buffer.set_highlight_matching_brackets(False)
 
+        config = Config.get_instance()
+
         mgr = gtksourceview.style_scheme_manager_get_default()
-        style_scheme = mgr.get_scheme('classic')
+        style_scheme = mgr.get_scheme(config['style_scheme'])
         if style_scheme:
             buffer.set_style_scheme(style_scheme)
 
@@ -81,9 +83,11 @@ class SourceView(gtksourceview.View):
         buffer.remove_source_marks(*buffer.get_bounds())
         if self._current_source != None:
             breakpoints = self._current_source.get_breakpoints()
-            for line_num in breakpoints:
-                iter = buffer.get_iter_at_line(line_num)
-                buffer.create_source_mark(None, 'breakpoint', iter)
+            for id in breakpoints:
+                breakpoint = breakpoints[id]
+                if breakpoint['line_num'] != None:
+                    iter = buffer.get_iter_at_line(breakpoint['line_num'])
+                    buffer.create_source_mark(None, 'breakpoint', iter)
 
     def window_coords_to_iter(self, x, y):
         (x_buf, y_buf) = self.window_to_buffer_coords( \
@@ -100,10 +104,12 @@ class SourceView(gtksourceview.View):
         return (iter1, iter2)
 
     def _add_tags(self):
+        config = Config.get_instance()
         tag = gtk.TextTag('current_line')
-        tag.set_property('foreground', '#ffffff')
+        tag.set_property('foreground', config['current_line_foreground'])
         tag.set_property('foreground-set', True)
-        tag.set_property('paragraph-background', '#444466')
+        tag.set_property('paragraph-background', \
+            config['current_line_background'])
         tag.set_property('paragraph-background-set', True)
         self.get_buffer().get_tag_table().add(tag)
 

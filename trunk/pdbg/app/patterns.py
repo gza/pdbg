@@ -5,6 +5,12 @@
 
 __version__ = "$Id$"
 
+def bind_params(func, *outer_args):
+    """Make a new function with outer_args passed in."""
+    def new_func(*inner_args, **keywords):
+        return func(*(inner_args+outer_args), **keywords)
+    return new_func
+
 class SingletonException(Exception):
     """Thrown on error by the Singleton class."""
 

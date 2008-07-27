@@ -21,7 +21,10 @@ class Config(dict, Singleton):
             'win_height': 600,
             'app_title': 'pDBG - A DBGp Debugger Frontend (v0.0)',
             'app_dir': app_dir,
-            'asset_dir': asset_dir
+            'asset_dir': asset_dir,
+            'current_line_background': '#444466',
+            'current_line_foreground': '#ffffff',
+            'style_scheme': 'classic'
         })
 
     def get_image_path(self, name):
