@@ -7,7 +7,7 @@ __version__ = "$Id$"
 
 import gobject
 import gtk
-from ...app.patterns import Manager
+from ...app.patterns import Manager, bind_params
 from ...app.mgr.connection import ConnectionManager
 from ...app.config import Config
 from ...app.source import Source
@@ -20,8 +20,6 @@ class PageManager(Manager):
     def __init__(self):
         super(Manager, self).__init__()
         self._source_cache = {}
-        self._init_file_uri = None
-        self._last_stack = None
 
     def setup(self, connection):
         """Setup the manager."""
@@ -55,6 +53,19 @@ class PageManager(Manager):
     def send_continuation(self, command):
         self._conn_mgr.send_continuation(command, self.on_cont_status)
 
+    def _set_breakpoint(self, line_num):
+        source = self._view['source_view'].current_source
+        if not source:
+            return
+        breaks_on_line = source.get_breakpoints_on_line(line_num)
+        if len(breaks_on_line) == 0:
+            callback = bind_params(self.on_breakpoint_set, source, line_num)
+            self._conn_mgr.send_line_breakpoint_set(source.file_uri, \
+                line_num + 1, callback)
+        else:
+            #source.remove_breakpoint(line_num)
+            pass
+
     def on_io_event(self, source, condition):
         if condition == gobject.IO_IN:
             self._conn_mgr.process_response()
@@ -74,14 +85,7 @@ class PageManager(Manager):
         left_gutter = source_view.get_window(gtk.TEXT_WINDOW_LEFT)
         if ev.window == left_gutter and ev.button == 1:
             iter = source_view.window_coords_to_iter(int(ev.x), int(ev.y))
-            line_num = iter.get_line()
-            source = source_view.current_source
-            if source:
-                if not source.has_breakpoint(line_num):
-                    source.add_breakpoint(line_num)
-                    source_view.refresh_breakpoints()
-                else:
-                    pass
+            self._set_breakpoint(iter.get_line())
 
     def on_command_sent(self, mgr, command):
         self._view['log'].log('>>', str(command))
@@ -103,12 +107,13 @@ class PageManager(Manager):
         app_view = AppView.get_instance()
         self._page_num = app_view['notebook'].append_page(outer_box, tab_label)
 
-        self._init_file_uri = init.file_uri
-        mgr.send_source(self._init_file_uri, self.on_init_source)
+        file_uri = init.file_uri
+        callback = bind_params(self.on_init_source, file_uri)
+        mgr.send_source(file_uri, callback)
 
-    def on_init_source(self, mgr, response):
-        source = Source(response.source)
-        self._source_cache[self._init_file_uri] = source
+    def on_init_source(self, mgr, response, init_file_uri):
+        source = Source(init_file_uri, response.source)
+        self._source_cache[init_file_uri] = source
         self._view['source_view'].current_source = source
         mgr.send_status(self.on_init_status)
 
@@ -130,7 +135,6 @@ class PageManager(Manager):
         # check the source file in the source view currently, and
         # change it if it differs from the top of the stack.
         stack = response.get_stack_elements()
-        self._last_stack = stack
         top = stack[0]
         
         if self._source_cache.has_key(top['filename']):
@@ -139,11 +143,16 @@ class PageManager(Manager):
             self._view['source_view'].set_current_line(top['lineno'] - 1)
         else:
             file_uri = top['filename']
-            mgr.send_source(file_uri, self.on_source_update_view)
+            callback = bind_params(self.on_source_update_view, stack)
+            mgr.send_source(file_uri, callback)
 
-    def on_source_update_view(self, mgr, response):
-        source = Source(response.source)
-        top = self._last_stack[0]
+    def on_source_update_view(self, mgr, response, last_stack):
+        top = last_stack[0]
+        source = Source(top['filename'], response.source)
         self._source_cache[top['filename']] = source
         self._view['source_view'].current_source = source
         self._view['source_view'].set_current_line(top['lineno'] - 1)
+    
+    def on_breakpoint_set(self, mgr, response, source, line_num):
+        source.add_breakpoint(line_num, response.id, 'line')
+        self._view['source_view'].refresh_breakpoints()

@@ -73,6 +73,15 @@ _stack_get_response_xml = \
 </response>
 """
 
+_breakpoint_set_response_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="breakpoint_set" 
+          transaction_id="3" 
+          id="122490001"/>
+"""
+
 _unknown_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
 <response xmlns="urn:debugger_protocol_v1" 
@@ -168,7 +177,15 @@ class TestStackGetResponseClass(unittest.TestCase):
         stack = r.get_stack_elements()
         self.assertEqual(len(stack), 2)
         self.assertEqual(stack[0]['where'], '{main}')
-        self.assertEqual(stack[1]['level'], '1')
+        self.assertEqual(stack[0]['lineno'], 3)
+        self.assertEqual(stack[1]['level'], 1)
+
+class TestBreakpointSetResponseClass(unittest.TestCase):
+    """Test the BreakpointSetResponse class."""
+
+    def test_id(self):
+        r = BreakpointSetResponse(_breakpoint_set_response_xml)
+        self.assertEqual(r.id, '122490001')
 
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""
