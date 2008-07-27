@@ -16,6 +16,7 @@ _event_names = (
     'state_changed',
     'command_sent',
     'response_received',
+    'stream_response_received',
     'response_handled',
     'init_packet',
     'can_interact',
@@ -121,31 +122,48 @@ class ConnectionManager(Manager):
         if could_interact and not self.can_interact:
             self.fire('can_interact', False)
 
-    def send_status(self, ob=None):
-        self.send_command('status', change_to=AwaitingStatus, observer=ob)
+    def send_status(self, observer=None):
+        self.send_command('status', change_to=AwaitingStatus, observer=observer)
 
-    def send_continuation(self, name, ob=None):
+    def send_continuation(self, name, observer=None):
         if name not in ('run','detach','step_into','step_over','step_out'):
             raise ConnectionManagerException, "%s is not a continuation command" % (name,)
-        self.send_command(name, change_to=AwaitingStatus, observer=ob)
+        self.send_command(name, change_to=AwaitingStatus, observer=observer)
 
-    def send_stack_get(self, ob=None):
-        self.send_command('stack_get', observer=ob)
+    def send_stack_get(self, observer=None):
+        self.send_command('stack_get', observer=observer)
 
-    def send_source(self, file_uri, ob=None):
-        self.send_command('source', { '-f': file_uri }, observer=ob)
+    def send_source(self, file_uri, observer=None):
+        self.send_command('source', { '-f': file_uri }, observer=observer)
 
-    def send_line_breakpoint_set(self, file_uri, line_num, ob=None):
+    def send_line_breakpoint_set(self, file_uri, line_num, observer=None):
         self.send_command('breakpoint_set', \
-            { '-t': 'line', '-f': file_uri, '-n': line_num }, observer=ob)
+            { '-t': 'line', '-f': file_uri, '-n': line_num }, observer=observer)
 
-    def send_breakpoint_remove(self, breakpoint_id, ob=None):
+    def send_breakpoint_remove(self, breakpoint_id, observer=None):
         self.send_command('breakpoint_remove', \
-            { '-d': breakpoint_id }, observer=ob)
+            { '-d': breakpoint_id }, observer=observer)
+
+    def send_stdout(self, redirect_type='2', observer=None):
+        redirect_type = str(redirect_type)
+        if redirect_type not in ('0', '1', '2'):
+            raise ConnectionManagerException, "%s is not a redirection type." \
+                % (redirect_type,)
+        self.send_command('stdout', { '-c': redirect_type }, observer=observer)
+
+    def send_stderr(self, redirect_type='2', observer=None):
+        redirect_type = str(redirect_type)
+        if redirect_type not in ('0', '1', '2'):
+            raise ConnectionManagerException, "%s is not a redirection type." \
+                % (redirect_type,)
+        self.send_command('stderr', { '-c': redirect_type }, observer=observer)
 
     def process_response(self):
         response = self._connection.recv_response()
         if response != None:
+            if type(response) == StreamResponse:
+                self.fire('stream_response_received', response)
+                return
             self._num_unresponded -= 1
             self.fire('response_received', response)
             new_state = self._state.run(self, response)

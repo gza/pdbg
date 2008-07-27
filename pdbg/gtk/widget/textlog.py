@@ -23,6 +23,9 @@ class TextLog(gtk.TextView):
         prefix = '[%s %s] ' % (time.strftime('%X'), type)
         text = re.compile('^', re.MULTILINE).sub(prefix, text)
         text = re.sub('[\r\n]*$', '\r\n', text)
+        self.log_no_prefix(text)
+
+    def log_no_prefix(self, text):
         buffer = self.get_buffer()
         buffer.place_cursor(buffer.get_end_iter())
         buffer.insert_at_cursor(text)

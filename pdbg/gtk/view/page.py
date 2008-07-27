@@ -24,6 +24,11 @@ class PageView(View):
     def set_connection_info(self, conn_info):
         self['tab_label'].set_text(_build_tab_label(conn_info))
 
+    def hide_stderr_page(self):
+        num = self['notebook'].page_num(self['stderr_scroll'])
+        if num != None:
+            self['notebook'].remove_page(num)
+
     @widget
     def _tab_label(self):
         return gtk.Label('')
@@ -46,6 +51,26 @@ class PageView(View):
         return frame
 
     @widget
+    def _stderr(self):
+        return TextLog()
+
+    @widget
+    def _stderr_scroll(self):
+        scroll = gtk.ScrolledWindow()
+        scroll.add(self._stderr())
+        return scroll
+
+    @widget
+    def _stdout(self):
+        return TextLog()
+
+    @widget
+    def _stdout_scroll(self):
+        scroll = gtk.ScrolledWindow()
+        scroll.add(self._stdout())
+        return scroll
+
+    @widget
     def _log(self):
         return TextLog()
 
@@ -57,11 +82,15 @@ class PageView(View):
 
     @widget
     def _notebook(self):
-        label = gtk.Label('Communication Log')
+        comm_label = gtk.Label('Communication Log')
+        stdout_label = gtk.Label('Standard Out')
+        stderr_label = gtk.Label('Standard Error')
 
         notebook = gtk.Notebook()
         notebook.set_tab_pos(gtk.POS_BOTTOM)
-        notebook.append_page(self._log_scroll(), label)
+        notebook.append_page(self._log_scroll(), comm_label)
+        notebook.append_page(self._stdout_scroll(), stdout_label)
+        notebook.append_page(self._stderr_scroll(), stderr_label)
         # Set the minimum requested size
         notebook.set_size_request(-1, 200)
         return notebook
