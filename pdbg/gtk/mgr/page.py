@@ -143,7 +143,7 @@ class PageManager(Manager):
         # stderr is a core command, yet xdebug does not support it :) so we
         # remove the tab page if the command fails. (this is true as of v2.0.3)
         if not response.successful:
-            self._view.hide_stderr_page()
+            self._view.remove_stderr_page()
         mgr.send_status(self.on_init_status)
 
     def on_init_status(self, mgr, response):

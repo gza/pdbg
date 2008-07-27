@@ -24,7 +24,7 @@ class PageView(View):
     def set_connection_info(self, conn_info):
         self['tab_label'].set_text(_build_tab_label(conn_info))
 
-    def hide_stderr_page(self):
+    def remove_stderr_page(self):
         num = self['notebook'].page_num(self['stderr_scroll'])
         if num != None:
             self['notebook'].remove_page(num)
