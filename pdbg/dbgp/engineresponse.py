@@ -161,11 +161,15 @@ class StackGetResponse(EngineResponse):
         return elements
 
 class BreakpointSetResponse(EngineResponse):
+    """Represent a response to a breakpoint_set command."""
 
     @property
     def id(self):
         """Return the id of the breakpoint."""
         return self.get_xpath_value('/dp:response/@id')
+
+class BreakpointRemoveResponse(EngineResponse):
+    """Represent a response to a breakpoint_remove command."""
 
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1

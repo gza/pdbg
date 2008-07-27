@@ -7,13 +7,13 @@ __version__ = "$Id$"
 
 import gobject
 import gtk
-from ...app.patterns import Manager, bind_params
-from ...app.mgr.connection import ConnectionManager
-from ...app.config import Config
-from ...app.source import Source
-from ...dbgp.engineresponse import StatusResponse, StackGetResponse
-from ..view.app import AppView
-from ..view.page import PageView
+from pdbg.app.patterns import Manager, bind_params
+from pdbg.app.mgr.connection import ConnectionManager
+from pdbg.app.config import Config
+from pdbg.app.source import Source
+from pdbg.dbgp.engineresponse import *
+from pdbg.gtk.view.app import AppView
+from pdbg.gtk.view.page import PageView
 
 class PageManager(Manager):
 
@@ -53,18 +53,27 @@ class PageManager(Manager):
     def send_continuation(self, command):
         self._conn_mgr.send_continuation(command, self.on_cont_status)
 
-    def _set_breakpoint(self, line_num):
+    def _set_line_breakpoint(self, line_num):
+        source = self._view['source_view'].current_source
+        if not source:
+            return
+        breaks_on_line = source.get_breakpoints_on_line(line_num)
+        if len(breaks_on_line) > 0:
+            return
+        callback = bind_params(self.on_breakpoint_set, source, line_num)
+        self._conn_mgr.send_line_breakpoint_set(source.file_uri, \
+            line_num + 1, callback)
+
+    def _remove_line_breakpoint(self, line_num):
         source = self._view['source_view'].current_source
         if not source:
             return
         breaks_on_line = source.get_breakpoints_on_line(line_num)
         if len(breaks_on_line) == 0:
-            callback = bind_params(self.on_breakpoint_set, source, line_num)
-            self._conn_mgr.send_line_breakpoint_set(source.file_uri, \
-                line_num + 1, callback)
-        else:
-            #source.remove_breakpoint(line_num)
-            pass
+            return
+        id = breaks_on_line[0]['id']
+        callback = bind_params(self.on_breakpoint_remove, source, id)
+        self._conn_mgr.send_breakpoint_remove(id, callback)
 
     def on_io_event(self, source, condition):
         if condition == gobject.IO_IN:
@@ -83,9 +92,12 @@ class PageManager(Manager):
     def on_button_press_on_source_view(self, source_view, ev):
         # ensure that click occurred on the left gutter
         left_gutter = source_view.get_window(gtk.TEXT_WINDOW_LEFT)
-        if ev.window == left_gutter and ev.button == 1:
+        if ev.window == left_gutter:
             iter = source_view.window_coords_to_iter(int(ev.x), int(ev.y))
-            self._set_breakpoint(iter.get_line())
+            if ev.button == 1:
+                self._set_line_breakpoint(iter.get_line())
+            elif ev.button == 3:
+                self._remove_line_breakpoint(iter.get_line())
 
     def on_command_sent(self, mgr, command):
         self._view['log'].log('>>', str(command))
@@ -154,5 +166,17 @@ class PageManager(Manager):
         self._view['source_view'].set_current_line(top['lineno'] - 1)
     
     def on_breakpoint_set(self, mgr, response, source, line_num):
-        source.add_breakpoint(line_num, response.id, 'line')
-        self._view['source_view'].refresh_breakpoints()
+        if isinstance(response, BreakpointSetResponse):
+            source.add_breakpoint(line_num, response.id, 'line')
+            self._view['source_view'].refresh_breakpoints()
+        else:
+            # TODO: do something ...
+            pass
+
+    def on_breakpoint_remove(self, mgr, response, source, id):
+        if isinstance(response, BreakpointRemoveResponse):
+            source.remove_breakpoint(id)
+            self._view['source_view'].refresh_breakpoints()
+        else:
+            # TODO: do something ...
+            pass
