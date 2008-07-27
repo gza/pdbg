@@ -28,8 +28,9 @@ class PageManager(Manager):
         self._conn_mgr.setup(connection)
 
         self._conn_mgr.add_observer(
-            command_sent=self.on_command_sent,
-            response_received=self.on_response_received,
+            command_sent=self.on_command,
+            response_received=self.on_response,
+            stream_response_received=self.on_stream_response,
             init_packet=self.on_init_packet)
 
         # Add a hook in the gobject main loop to monitor for incoming data
@@ -99,11 +100,17 @@ class PageManager(Manager):
             elif ev.button == 3:
                 self._remove_line_breakpoint(iter.get_line())
 
-    def on_command_sent(self, mgr, command):
+    def on_command(self, mgr, command):
         self._view['log'].log('>>', str(command))
 
-    def on_response_received(self, mgr, response):
+    def on_response(self, mgr, response):
         self._view['log'].log('<<', str(response))
+
+    def on_stream_response(self, mgr, response):
+        if response.type == 'stdout':
+            self._view['stdout'].log_no_prefix(response.data)
+        elif response.type == 'stderr':
+            self._view['stderr'].log_no_prefix(response.data)
 
     def on_init_packet(self, mgr, init, remote_addr):
         conn_info = init.get_engine_info()
@@ -127,6 +134,16 @@ class PageManager(Manager):
         source = Source(init_file_uri, response.source)
         self._source_cache[init_file_uri] = source
         self._view['source_view'].current_source = source
+        mgr.send_stdout(observer=self.on_init_stdout)
+
+    def on_init_stdout(self, mgr, response):
+        mgr.send_stderr(observer=self.on_init_stderr)
+
+    def on_init_stderr(self, mgr, response):
+        # stderr is a core command, yet xdebug does not support it :) so we
+        # remove the tab page if the command fails. (this is true as of v2.0.3)
+        if not response.successful:
+            self._view.hide_stderr_page()
         mgr.send_status(self.on_init_status)
 
     def on_init_status(self, mgr, response):

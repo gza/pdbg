@@ -25,6 +25,14 @@ _init_response_xml = \
 </init>
 """
 
+_stream_response_xml = \
+"""
+<stream xmlns="urn:debugger_protocol_v1" 
+        xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+        type="stdout" 
+        encoding="base64">Zm9v</stream>
+"""
+
 _status_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
 <response xmlns="urn:debugger_protocol_v1" 
@@ -150,6 +158,17 @@ class TestInitResponseClass(unittest.TestCase):
         info = r.get_engine_info()
         self.assertEqual(info['engine'], 'Xdebug')
         self.assertEqual(info['engine_version'], '2.0.3')
+
+class TestStreamResponseClass(unittest.TestCase):
+    """Test the StreamResponse class."""
+
+    def test_type(self):
+        r = StreamResponse(_stream_response_xml)
+        self.assertEqual(r.type, 'stdout')
+
+    def test_get_engine_info(self):
+        r = StreamResponse(_stream_response_xml)
+        self.assertEqual(r.data, 'foo')
 
 class TestStatusResponseClass(unittest.TestCase):
     """Test the StatusResponse class."""

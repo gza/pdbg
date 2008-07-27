@@ -57,7 +57,10 @@ class EngineResponse(object):
     @property
     def successful(self):
         """Return True if the command was successful, False otherwise."""
-        return len(self.xpath('/dp:response/dp:error')) == 0
+        try:
+            return self.get_xpath_value('/dp:response/@success') == '1'
+        except Exception, e:
+            return len(self.xpath('/dp:response/dp:error')) == 0
 
     @property
     def error_code(self):
@@ -111,6 +114,19 @@ class InitResponse(EngineResponse):
             for (key, value) in node.attrib.items():
                 info[info_type+'_'+key] = value
         return info
+
+class StreamResponse(EngineResponse):
+    """Represent stream data sent by a debugger engine."""
+
+    @property
+    def type(self):
+        """Return the stream type (stdout or stderr)."""
+        return self.get_xpath_value('/dp:stream/@type')
+
+    @property
+    def data(self):
+        """Return the data streamed by the debugger engine."""
+        return b64decode(self.get_xpath_value('/dp:stream'))
 
 class StatusResponse(EngineResponse):
     """Represent a response to a status command."""
@@ -258,6 +274,8 @@ def factory(xml):
     response = EngineResponse(xml)
     if response.xpath('/dp:init'):
         return InitResponse(response.xml_root)
+    elif response.xpath('/dp:stream'):
+        return StreamResponse(response.xml_root)
     if not response.successful:
         return response
     class_name = _command_to_class_name(response.command)
