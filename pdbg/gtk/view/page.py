@@ -10,6 +10,7 @@ import re
 from base import View, widget
 from ..widget.textlog import TextLog
 from ..widget.sourceview import SourceView
+from ..widget.sourcelist import SourceList
 
 def _build_tab_label(info):
     label = '[' + info['remote_ip'] + ']'
@@ -28,6 +29,19 @@ class PageView(View):
         num = self['notebook'].page_num(self['stderr_scroll'])
         if num != None:
             self['notebook'].remove_page(num)
+
+    @widget
+    def _source_list(self):
+        source_list = SourceList()
+        return source_list
+
+    @widget
+    def _source_list_scroll(self):
+        scroll = gtk.ScrolledWindow()
+        scroll.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        scroll.add(self._source_list())
+        return scroll
 
     @widget
     def _tab_label(self):
@@ -105,8 +119,9 @@ class PageView(View):
     @widget
     def _outer_box(self):
         box = gtk.HPaned()
-        box.pack1(gtk.Label('LEFT'), False, False)
+        box.pack1(self._source_list_scroll(), False, False)
         box.pack2(self._inner_box(), True, False)
+        box.set_position(200)
         return box
 
     def _setup(self):
