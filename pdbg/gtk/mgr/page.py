@@ -91,6 +91,8 @@ class PageManager(Manager):
             self._page_num = page_num
 
     def on_button_press_on_source_view(self, source_view, ev):
+        if not self._conn_mgr.can_interact:
+            return
         # ensure that click occurred on the left gutter
         left_gutter = source_view.get_window(gtk.TEXT_WINDOW_LEFT)
         if ev.window == left_gutter:
