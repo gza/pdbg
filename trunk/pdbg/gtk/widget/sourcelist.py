@@ -22,20 +22,13 @@ class SourceList(gtk.TreeView):
 
     def _create_model(self):
         list_store = gtk.ListStore(gobject.TYPE_STRING)
-        for i in range(0, 20):
-            iter = list_store.append()
-            list_store.set(iter, COLUMN_URI, 'Line ' + str(i+1))
         return list_store
 
     def _add_columns(self):
         renderer = gtk.CellRendererText()
-        renderer.set_property('ellipsize-set', True)
-        renderer.set_property('ellipsize', pango.ELLIPSIZE_END)
-        column = gtk.TreeViewColumn('File URI', renderer, \
-            text=COLUMN_URI)
+        renderer.set_property('ellipsize', pango.ELLIPSIZE_MIDDLE)
+        column = gtk.TreeViewColumn('File URI', renderer, text=COLUMN_URI)
         column.set_sort_column_id(COLUMN_URI)
         column.set_clickable(False)
         self.append_column(column)
-
-
 

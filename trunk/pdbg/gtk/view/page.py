@@ -39,7 +39,7 @@ class PageView(View):
     def _source_list_scroll(self):
         scroll = gtk.ScrolledWindow()
         scroll.set_shadow_type(gtk.SHADOW_ETCHED_IN)
-        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.add(self._source_list())
         return scroll
 
