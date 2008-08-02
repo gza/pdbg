@@ -49,7 +49,7 @@ class SourceList(gtk.TreeView):
     def _add_columns(self):
         renderer = gtk.CellRendererText()
         renderer.set_property('ellipsize', pango.ELLIPSIZE_START)
-        column = gtk.TreeViewColumn('File URI', renderer, text=COLUMN_URI)
+        column = gtk.TreeViewColumn(_('Known File URIs'), renderer, text=COLUMN_URI)
         column.set_sort_column_id(COLUMN_URI)
         column.set_clickable(False)
         self.append_column(column)

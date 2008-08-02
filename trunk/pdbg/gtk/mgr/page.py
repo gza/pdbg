@@ -41,6 +41,7 @@ class PageManager(Manager):
             self.on_io_event)
 
         self._view = PageView()
+
         self._view['source_view'].connect(
             'button-press-event',
             self.on_button_press_on_source_view)
@@ -48,6 +49,10 @@ class PageManager(Manager):
         self._view['source_list'].connect(
             'row-activated',
             self.on_source_list_row_activated)
+
+        self._view['get_uri_button'].connect(
+            'clicked',
+            self.on_get_uri_button_clicked)
 
         app_view = AppView.get_instance()
         app_view['notebook'].connect('page-reordered', self.on_page_reordered)
@@ -67,7 +72,7 @@ class PageManager(Manager):
         if len(breaks_on_line) > 0:
             return
         callback = bind_params(self.on_breakpoint_set, source, line_num)
-        self._conn_mgr.send_line_breakpoint_set(source.file_uri, \
+        self._conn_mgr.send_line_breakpoint_set(source.file_uri, 
             line_num + 1, callback)
 
     def _remove_line_breakpoint(self, line_num):
@@ -117,6 +122,16 @@ class PageManager(Manager):
         file_uri = self._view.get_file_uri_from_list_path(path)
         if file_uri != self._view['source_view'].current_file_uri:
             self._view.update_source(self._source_cache[file_uri])
+
+    def on_get_uri_button_clicked(self, button):
+        entered_uri = self._view['uri_entry'].get_text()
+        if self._source_cache.has_key(entered_uri):
+            self._source_cache.unset_current_lines()
+            source = self._source_cache[entered_uri]
+            self._view.update_source(source)
+        else:
+            callback = bind_params(self.on_get_uri_source, entered_uri)
+            self._conn_mgr.send_source(entered_uri, callback)
 
     def on_command(self, mgr, command):
         # Called by conn_mgr when a command is being sent. The command string
@@ -254,6 +269,15 @@ class PageManager(Manager):
         if isinstance(response, BreakpointRemoveResponse):
             source.remove_breakpoint(id)
             self._view['source_view'].refresh_breakpoints()
+        else:
+            # TODO: do something ...
+            pass
+
+    def on_get_uri_source(self, mgr, response, entered_uri):
+        if isinstance(response, SourceResponse):
+            source = Source(entered_uri, response.source)
+            self._source_cache[entered_uri] = source
+            self._view.update_source(source)
         else:
             # TODO: do something ...
             pass

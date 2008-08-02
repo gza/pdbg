@@ -40,6 +40,8 @@ class PageView(View):
 
         source_view.refresh_current_line()
 
+        self['uri_entry'].set_text(source.file_uri)
+
     def get_file_uri_from_list_path(self, path):
         return self['source_list'].get_model().get_file_uri_from_path(path)
 
@@ -61,6 +63,22 @@ class PageView(View):
         return gtk.Label('')
 
     @widget
+    def _uri_entry(self):
+        return gtk.Entry()
+
+    @widget
+    def _get_uri_button(self):
+        return gtk.Button(_('Get URI'))
+
+    @widget
+    def _open_uri_box(self):
+        box = gtk.HBox()
+        box.pack_start(gtk.Label(_('Current URI:')), False, False, 2)
+        box.pack_start(self._uri_entry(), True, True)
+        box.pack_start(self._get_uri_button(), False, False)
+        return box
+
+    @widget
     def _source_view(self):
         return SourceView()
 
@@ -76,6 +94,13 @@ class PageView(View):
         frame.add(self._source_scroll())
         frame.set_shadow_type(gtk.SHADOW_IN)
         return frame
+
+    @widget
+    def _source_box(self):
+        box = gtk.VBox()
+        box.pack_start(self._open_uri_box(), False, False)
+        box.pack_start(self._source_frame(), True, True)
+        return box
 
     @widget
     def _stderr(self):
@@ -125,7 +150,7 @@ class PageView(View):
     @widget
     def _inner_box(self):
         box = gtk.VPaned()
-        box.pack1(self._source_frame(), True, False)
+        box.pack1(self._source_box(), True, False)
         box.pack2(self._notebook(), False, False)
         return box
 
