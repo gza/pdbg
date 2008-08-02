@@ -13,6 +13,7 @@ class Source(object):
         self._file_uri = file_uri
         self._text = text
         self._breakpoints = {}
+        self._current_line = None
 
     def add_breakpoint(self, line_num, id, type):
         """Add a breakpoint to the source file."""
@@ -57,3 +58,25 @@ class Source(object):
     def file_uri(self):
         """Return the source file uri."""
         return self._file_uri
+
+    def get_current_line(self):
+        """Return the current line of the source file, or None."""
+        return self._current_line
+
+    def set_current_line(self, line_num):
+        """Set the current line of the source file."""
+        if line_num == None:
+            self._current_line = None
+        else:
+            self._current_line = int(line_num)
+
+    current_line = property(get_current_line, set_current_line)
+
+class SourceCache(dict):
+
+    """Represent a group of Source objects by file uri."""
+
+    def unset_current_lines(self):
+        """Unset the current line of all Source objects in the cache."""
+        for key in self:
+            self[key].current_line = None

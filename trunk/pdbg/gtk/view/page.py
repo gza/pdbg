@@ -30,6 +30,19 @@ class PageView(View):
         if num != None:
             self['notebook'].remove_page(num)
 
+    def update_source(self, source):
+        source_view = self['source_view']
+        source_view.current_source = source
+
+        model = self['source_list'].get_model()
+        if not model.has_source(source):
+            model.add_source(source)
+
+        source_view.refresh_current_line()
+
+    def get_file_uri_from_list_path(self, path):
+        return self['source_list'].get_model().get_file_uri_from_path(path)
+
     @widget
     def _source_list(self):
         source_list = SourceList()
