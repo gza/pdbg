@@ -109,9 +109,9 @@ class PageView(View):
 
     @widget
     def _notebook(self):
-        comm_label = gtk.Label('Communication Log')
-        stdout_label = gtk.Label('Standard Out')
-        stderr_label = gtk.Label('Standard Error')
+        comm_label = gtk.Label(_('Communication Log'))
+        stdout_label = gtk.Label(_('Standard Out'))
+        stderr_label = gtk.Label(_('Standard Error'))
 
         notebook = gtk.Notebook()
         notebook.set_tab_pos(gtk.POS_BOTTOM)
