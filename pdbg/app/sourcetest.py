@@ -47,5 +47,13 @@ class TestSourceClass(unittest.TestCase):
         self.assertEquals(self._source.has_breakpoint('f10'), True)
         self.assertEquals(self._source.has_breakpoint('f11'), False)
 
+    def test_current_line(self):
+        self._source.current_line = 1
+        self.assertEquals(self._source.current_line, 1)
+        self._source.current_line = '2'
+        self.assertEquals(self._source.current_line, 2)
+        self._source.current_line = None
+        self.assertEquals(self._source.current_line, None)
+
 if __name__ == '__main__':
     unittest.main()

@@ -54,30 +54,6 @@ class SourceView(gtksourceview.View):
         self._add_tags()
         self._add_marks()
 
-    def set_current_line(self, line_num):
-        self.unset_current_line()
-        buffer = self.get_buffer()
-        buffer.apply_tag_by_name('current_line', *self._get_line_iters(line_num))
-        self._current_line = line_num
-
-    def unset_current_line(self):
-        if self._current_line != None:
-            (iter1, iter2) = self._get_line_iters(self._current_line)
-            buffer = self.get_buffer()
-            buffer.remove_tag_by_name('current_line', iter1, iter2)
-        self._current_line = None
-
-    def set_current_source(self, source):
-        self._current_source = source
-        self.unset_current_line()
-        self.get_buffer().set_text(self._current_source.text)
-        self.refresh_breakpoints()
-
-    def get_current_source(self):
-        return self._current_source
-
-    current_source = property(get_current_source, set_current_source)
-
     def refresh_breakpoints(self):
         buffer = self.get_buffer()
         buffer.remove_source_marks(*buffer.get_bounds())
@@ -89,10 +65,49 @@ class SourceView(gtksourceview.View):
                     iter = buffer.get_iter_at_line(breakpoint['line_num'])
                     buffer.create_source_mark(None, 'breakpoint', iter)
 
+    def refresh_current_line(self):
+        current_line = self._current_source.current_line
+        if current_line != None:
+            self._set_current_line(current_line - 1)
+        else:
+            self._unset_current_line()
+
     def window_coords_to_iter(self, x, y):
         (x_buf, y_buf) = self.window_to_buffer_coords( \
             gtk.TEXT_WINDOW_LEFT, x, y)
         return self.get_line_at_y(y_buf)[0]
+
+    def set_current_source(self, source):
+        self._current_source = source
+        self._unset_current_line()
+        self.get_buffer().set_text(self._current_source.text)
+        self.refresh_breakpoints()
+        self.refresh_current_line()
+
+    def get_current_source(self):
+        return self._current_source
+
+    current_source = property(get_current_source, set_current_source)
+
+    @property
+    def current_file_uri(self):
+        if self._current_source == None:
+            return None
+        else:
+            return self._current_source.file_uri
+
+    def _set_current_line(self, line_num):
+        self._unset_current_line()
+        buffer = self.get_buffer()
+        buffer.apply_tag_by_name('current_line', *self._get_line_iters(line_num))
+        self._current_line = line_num
+
+    def _unset_current_line(self):
+        if self._current_line != None:
+            (iter1, iter2) = self._get_line_iters(self._current_line)
+            buffer = self.get_buffer()
+            buffer.remove_tag_by_name('current_line', iter1, iter2)
+        self._current_line = None
 
     def _get_line_iters(self, line_num):
         buffer = self.get_buffer()

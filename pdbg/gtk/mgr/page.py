@@ -10,7 +10,7 @@ import gtk
 from pdbg.app.patterns import Manager, bind_params
 from pdbg.app.mgr.connection import ConnectionManager
 from pdbg.app.config import Config
-from pdbg.app.source import Source
+from pdbg.app.source import Source, SourceCache
 from pdbg.dbgp.engineresponse import *
 from pdbg.gtk.view.app import AppView
 from pdbg.gtk.view.page import PageView
@@ -19,7 +19,7 @@ class PageManager(Manager):
 
     def __init__(self):
         super(Manager, self).__init__()
-        self._source_cache = {}
+        self._source_cache = SourceCache()
 
     def setup(self, connection):
         """Setup the manager."""
@@ -41,8 +41,13 @@ class PageManager(Manager):
             self.on_io_event)
 
         self._view = PageView()
-        self._view['source_view'].connect('button-press-event', \
+        self._view['source_view'].connect(
+            'button-press-event',
             self.on_button_press_on_source_view)
+
+        self._view['source_list'].connect(
+            'row-activated',
+            self.on_source_list_row_activated)
 
         app_view = AppView.get_instance()
         app_view['notebook'].connect('page-reordered', self.on_page_reordered)
@@ -87,8 +92,9 @@ class PageManager(Manager):
         return True
 
     def on_page_reordered(self, notebook, child, page_num):
-        # If the page ordering of the notebook is modified, ensure that the
-        # _page_num variable is updated accordingly.
+        # Called by gtk when the notebook pages are reordered. If the page 
+        # ordering of the notebook is modified, ensure that the _page_num 
+        # variable is updated accordingly.
         if child == self._view['outer_box']:
             self._page_num = page_num
 
@@ -105,6 +111,12 @@ class PageManager(Manager):
                 self._set_line_breakpoint(iter.get_line())
             elif ev.button == 3:
                 self._remove_line_breakpoint(iter.get_line())
+
+    def on_source_list_row_activated(self, source_list, path, column):
+        # Called by gtk when a row is clicked in the source list.
+        file_uri = self._view.get_file_uri_from_list_path(path)
+        if file_uri != self._view['source_view'].current_file_uri:
+            self._view.update_source(self._source_cache[file_uri])
 
     def on_command(self, mgr, command):
         # Called by conn_mgr when a command is being sent. The command string
@@ -151,7 +163,8 @@ class PageManager(Manager):
         # sourceview is updated with the text.
         source = Source(init_file_uri, response.source)
         self._source_cache[init_file_uri] = source
-        self._view['source_view'].current_source = source
+        self._view.update_source(source)
+
         mgr.send_stdout(observer=self.on_init_stdout)
 
     def on_init_stdout(self, mgr, response):
@@ -186,7 +199,8 @@ class PageManager(Manager):
         if response.status == 'break':
             mgr.send_stack_get(self.on_cont_stack_get)
         else:
-            self._view['source_view'].unset_current_line()
+            self._source_cache.unset_current_lines()
+            self._view['source_view'].refresh_current_line()
 
     def on_cont_stack_get(self, mgr, response):
         # Called by conn_mgr after on_cont_status, with a stack_get response.
@@ -197,15 +211,19 @@ class PageManager(Manager):
         top = stack[0]
         source_view = self._view['source_view']
 
+        self._source_cache.unset_current_lines()
+
         # check if the sourceview is showing the file on the top of the stack.
         # If so, update the current line and return.
-        if source_view.current_source.file_uri == top['filename']:
-            source_view.set_current_line(top['lineno'] - 1)
+        if source_view.current_file_uri == top['filename']:
+            source_view.current_source.current_line = top['lineno']
+            source_view.refresh_current_line()
             return
 
         if self._source_cache.has_key(top['filename']):
-            source_view.current_source = self._source_cache[top['filename']]
-            source_view.set_current_line(top['lineno'] - 1)
+            source = self._source_cache[top['filename']]
+            source.current_line = top['lineno']
+            self._view.update_source(source)
         else:
             file_uri = top['filename']
             callback = bind_params(self.on_source_update_view, stack)
@@ -216,9 +234,9 @@ class PageManager(Manager):
         # Updates the source in the sourceview and the current line number.
         top = last_stack[0]
         source = Source(top['filename'], response.source)
+        source.current_line = top['lineno']
         self._source_cache[top['filename']] = source
-        self._view['source_view'].current_source = source
-        self._view['source_view'].set_current_line(top['lineno'] - 1)
+        self._view.update_source(source)
     
     def on_breakpoint_set(self, mgr, response, source, line_num):
         # Called by conn_mgr with a breakpoint_set response. If the command
