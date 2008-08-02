@@ -5,6 +5,9 @@
 
 __version__ = "$Id$"
 
+import gettext
+gettext.install('pdbg')
+
 import gobject
 import gtk
 from ..app.patterns import Observable, Singleton

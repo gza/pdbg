@@ -38,13 +38,13 @@ class AppView(View, Singleton):
 
     @widget
     def _file_menu_item(self):
-        item = gtk.MenuItem("_File")
+        item = gtk.MenuItem(_("_File"))
         item.set_submenu(self._file_menu())
         return item
 
     @widget
     def _help_menu_item(self):
-        item = gtk.MenuItem("_Help")
+        item = gtk.MenuItem(_("_Help"))
         item.set_submenu(self._help_menu())
         return item
 
@@ -57,11 +57,11 @@ class AppView(View, Singleton):
 
     @widget
     def _info_page_label(self):
-        return gtk.Label("Listening for connections on %s:%s ...")
+        return gtk.Label(_('Listening for connections on %s:%s ...'))
 
     @widget
     def _info_tab_label(self):
-        return gtk.Label('pDBG Information')
+        return gtk.Label(_('pDBG Information'))
 
     @widget
     def _notebook(self):

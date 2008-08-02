@@ -12,12 +12,12 @@ from ...app.config import Config
 from ...app.patterns import Singleton
 
 _button_info = (
-    ('run', 'Run'),
-    ('detach', 'Detach'),
+    ('run', _('Run')),
+    ('detach', _('Detach')),
     ('-', '-'),
-    ('step_into', 'Step Into'),
-    ('step_over', 'Step Over'),
-    ('step_out', 'Step Out')
+    ('step_into', _('Step Into')),
+    ('step_over', _('Step Over')),
+    ('step_out', _('Step Out'))
 )
 
 class ToolbarView(View, Singleton):
