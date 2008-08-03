@@ -37,7 +37,14 @@ class PagesManager(Manager, Singleton):
         listener_mgr.add_observer('new_connection', self.on_new_connection)
 
         app_view = AppView.get_instance()
-        app_view['notebook'].connect('switch-page', self.on_switch_page)
+
+        app_view['notebook'].connect(
+            'switch-page', 
+            self.on_switch_page)
+
+        app_view['notebook'].connect(
+            'page-removed',
+            self.on_page_removed)
 
     def on_switch_page(self, notebook, page, page_num):
         if self._active_mgr != None:
@@ -46,6 +53,12 @@ class PagesManager(Manager, Singleton):
         if page_num > 0:
             self._active_mgr = self._page_mgrs[page_num-1]
             self.fire('page_mgr_activated', self._active_mgr)
+
+    def on_page_removed(self, notebook, page, page_num):
+        if page_num > 0:
+            del self._page_mgrs[page_num-1]
+        for page_mgr in self._page_mgrs:
+            page_mgr.refresh_page_number()
 
     def on_new_connection(self, mgr, connection):
         """Handle the establishment of new DBGp connections.

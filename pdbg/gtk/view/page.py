@@ -22,8 +22,12 @@ def _build_tab_label(info):
 
 class PageView(View):
 
-    def set_connection_info(self, conn_info):
+    def append_page_on_init(self, conn_info, notebook):
         self['tab_label'].set_text(_build_tab_label(conn_info))
+        return notebook.append_page_with_button(
+            self['outer_box'], 
+            self['tab_label'],
+            self['tab_button'])
 
     def remove_stderr_page(self):
         num = self['notebook'].page_num(self['stderr_scroll'])
@@ -63,19 +67,44 @@ class PageView(View):
         return gtk.Label('')
 
     @widget
+    def _tab_button(self):
+        button = gtk.Button()
+        button.set_relief(gtk.RELIEF_NONE)
+
+        img = gtk.Image()
+        img.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_MENU)
+        button.set_image(img)
+
+        return button
+
+    @widget
+    def _uri_entry_label(self):
+        label = gtk.Label()
+        label.set_text_with_mnemonic(_('Current _URI:'))
+        return label
+
+    @widget
     def _uri_entry(self):
         return gtk.Entry()
 
     @widget
     def _get_uri_button(self):
-        return gtk.Button(_('Get URI'))
+        button = gtk.Button(_('Request File'))
+
+        img = gtk.Image()
+        img.set_from_stock(gtk.STOCK_OPEN, gtk.ICON_SIZE_MENU)
+        button.set_image(img)
+
+        return button
 
     @widget
     def _open_uri_box(self):
         box = gtk.HBox()
-        box.pack_start(gtk.Label(_('Current URI:')), False, False, 2)
+        box.pack_start(self._uri_entry_label(), False, False, 2)
         box.pack_start(self._uri_entry(), True, True)
+
         box.pack_start(self._get_uri_button(), False, False)
+        self['uri_entry_label'].set_mnemonic_widget(self['uri_entry'])
         return box
 
     @widget
@@ -164,4 +193,5 @@ class PageView(View):
 
     def _setup(self):
         self._tab_label()
+        self._tab_button()
         self._outer_box()

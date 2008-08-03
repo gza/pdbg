@@ -20,6 +20,7 @@ class PageManager(Manager):
     def __init__(self):
         super(Manager, self).__init__()
         self._source_cache = SourceCache()
+        self._page_num = None
 
     def setup(self, connection):
         """Setup the manager."""
@@ -42,6 +43,10 @@ class PageManager(Manager):
 
         self._view = PageView()
 
+        self._view['tab_button'].connect(
+            'clicked',
+            self.on_tab_close_button_clicked)
+
         self._view['source_view'].connect(
             'button-press-event',
             self.on_button_press_on_source_view)
@@ -54,8 +59,9 @@ class PageManager(Manager):
             'clicked',
             self.on_get_uri_button_clicked)
 
-        app_view = AppView.get_instance()
-        app_view['notebook'].connect('page-reordered', self.on_page_reordered)
+        self._view['uri_entry'].connect(
+            'activate',
+            self.on_get_uri_button_clicked)
 
     @property
     def conn_mgr(self):
@@ -63,6 +69,10 @@ class PageManager(Manager):
 
     def send_continuation(self, command):
         self._conn_mgr.send_continuation(command, self.on_cont_status)
+
+    def refresh_page_number(self):
+        notebook = AppView.get_instance()['notebook']
+        self._page_num = notebook.page_num(self._view['outer_box'])
 
     def _set_line_breakpoint(self, line_num):
         source = self._view['source_view'].current_source
@@ -96,12 +106,10 @@ class PageManager(Manager):
         # TODO: handle other conditions
         return True
 
-    def on_page_reordered(self, notebook, child, page_num):
-        # Called by gtk when the notebook pages are reordered. If the page 
-        # ordering of the notebook is modified, ensure that the _page_num 
-        # variable is updated accordingly.
-        if child == self._view['outer_box']:
-            self._page_num = page_num
+    def on_tab_close_button_clicked(self, button):
+        self._conn_mgr.close_connection()
+        app_view = AppView.get_instance()
+        app_view['notebook'].remove_page(self._page_num)
 
     def on_button_press_on_source_view(self, source_view, ev):
         # Called by gtk when a button press has occurred on the sourceview
@@ -123,7 +131,12 @@ class PageManager(Manager):
         if file_uri != self._view['source_view'].current_file_uri:
             self._view.update_source(self._source_cache[file_uri])
 
-    def on_get_uri_button_clicked(self, button):
+    def on_get_uri_button_clicked(self, *args):
+        # Called by gtk when the get URI button is clicked, AND when enter
+        # is pressed in the current URI entry. (The latter is due to the
+        # connecting of the entries activate signal to this method).
+        if not self._conn_mgr.can_interact:
+            return
         entered_uri = self._view['uri_entry'].get_text()
         if entered_uri == self._view['source_view'].current_file_uri:
             return
@@ -157,17 +170,12 @@ class PageManager(Manager):
         # engine. Appends a new notebook page and requests the source for the
         # initial script.
         conn_info = init.get_engine_info()
-        addr_info = { 'remote_ip': remote_addr[0], \
-            'remote_port': remote_addr[1] }
-        conn_info.update(addr_info)
-
-        self._view.set_connection_info(conn_info)
-
-        outer_box = self._view['outer_box']
-        tab_label = self._view['tab_label']
+        conn_info.update({ 'remote_ip': remote_addr[0], 
+            'remote_port': remote_addr[1] })
 
         app_view = AppView.get_instance()
-        self._page_num = app_view['notebook'].append_page(outer_box, tab_label)
+        self._page_num = self._view.append_page_on_init(conn_info, 
+            app_view['notebook'])
 
         file_uri = init.file_uri
         callback = bind_params(self.on_init_source, file_uri)
@@ -278,6 +286,8 @@ class PageManager(Manager):
             pass
 
     def on_get_uri_source(self, mgr, response, entered_uri):
+        # Called by conn_mgr with a source response containing source for a 
+        # user requested file.
         if isinstance(response, SourceResponse):
             source = Source(entered_uri, response.source)
             self._source_cache[entered_uri] = source
