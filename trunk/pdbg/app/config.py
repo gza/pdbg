@@ -19,7 +19,7 @@ class Config(dict, Singleton):
         self.update({
             'win_width': 800,
             'win_height': 600,
-            'app_title': 'pDBG - A DBGp Debugger Frontend (v0.0)',
+            'app_title': 'pDBG - v0.1',
             'app_dir': app_dir,
             'asset_dir': asset_dir,
             'current_line_background': '#444466',

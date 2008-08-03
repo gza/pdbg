@@ -10,6 +10,7 @@ import os.path
 from base import View, widget
 from ...app.config import Config
 from ...app.patterns import Singleton
+from ..widget.mainnotebook import MainNotebook
 from toolbar import ToolbarView
 
 class AppView(View, Singleton):
@@ -65,7 +66,7 @@ class AppView(View, Singleton):
 
     @widget
     def _notebook(self):
-        notebook = gtk.Notebook()
+        notebook = MainNotebook()
         notebook.append_page(self._info_page_label(), self._info_tab_label())
         return notebook
 
