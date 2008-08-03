@@ -125,8 +125,9 @@ class PageManager(Manager):
 
     def on_get_uri_button_clicked(self, button):
         entered_uri = self._view['uri_entry'].get_text()
+        if entered_uri == self._view['source_view'].current_file_uri:
+            return
         if self._source_cache.has_key(entered_uri):
-            self._source_cache.unset_current_lines()
             source = self._source_cache[entered_uri]
             self._view.update_source(source)
         else:
@@ -215,7 +216,9 @@ class PageManager(Manager):
             mgr.send_stack_get(self.on_cont_stack_get)
         else:
             self._source_cache.unset_current_lines()
-            self._view['source_view'].refresh_current_line()
+            source_view = self._view['source_view']
+            source_view.refresh_current_line()
+            source_view.scroll_to_current_line()
 
     def on_cont_stack_get(self, mgr, response):
         # Called by conn_mgr after on_cont_status, with a stack_get response.
@@ -233,6 +236,7 @@ class PageManager(Manager):
         if source_view.current_file_uri == top['filename']:
             source_view.current_source.current_line = top['lineno']
             source_view.refresh_current_line()
+            source_view.scroll_to_current_line()
             return
 
         if self._source_cache.has_key(top['filename']):

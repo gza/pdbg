@@ -8,10 +8,8 @@ __version__ = "$Id$"
 import gtk
 import gtksourceview2 as gtksourceview
 import pango
-import time
-import re
-import copy
-from ...app.config import Config
+import gobject
+from pdbg.app.config import Config
 
 def _get_language_for_mime_type(mime):
     lang_manager = gtksourceview.language_manager_get_default()
@@ -72,6 +70,21 @@ class SourceView(gtksourceview.View):
         else:
             self._unset_current_line()
 
+    def scroll_to_current_line(self, defer_scroll=False):
+        if self._current_line == None:
+            return
+        (iter1, iter2) = self._get_line_iters(self._current_line)
+        def scroll_func():
+            self.scroll_to_iter(iter1, 0)
+            return False
+        if defer_scroll:
+            # The call to scroll_to_iter needs to be deferred because the 
+            # sourceview must be redrawn before the call will work if the
+            # source file changed.
+            gobject.idle_add(scroll_func)
+        else:
+            scroll_func()
+
     def window_coords_to_iter(self, x, y):
         (x_buf, y_buf) = self.window_to_buffer_coords( \
             gtk.TEXT_WINDOW_LEFT, x, y)
@@ -83,6 +96,7 @@ class SourceView(gtksourceview.View):
         self.get_buffer().set_text(self._current_source.text)
         self.refresh_breakpoints()
         self.refresh_current_line()
+        self.scroll_to_current_line(defer_scroll=True)
 
     def get_current_source(self):
         return self._current_source
@@ -99,7 +113,8 @@ class SourceView(gtksourceview.View):
     def _set_current_line(self, line_num):
         self._unset_current_line()
         buffer = self.get_buffer()
-        buffer.apply_tag_by_name('current_line', *self._get_line_iters(line_num))
+        (iter1, iter2) = self._get_line_iters(line_num)
+        buffer.apply_tag_by_name('current_line', iter1, iter2)
         self._current_line = line_num
 
     def _unset_current_line(self):
