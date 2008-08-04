@@ -124,13 +124,13 @@ class PageManager(Manager):
         # control. This method sets or removes line breakpoints.
         if not self._conn_mgr.can_interact:
             return
-        # ensure that click occurred on the left gutter
-        left_gutter = source_view.get_window(gtk.TEXT_WINDOW_LEFT)
-        if ev.window == left_gutter:
-            iter = source_view.window_coords_to_iter(int(ev.x), int(ev.y))
+        iter = source_view.get_iter_of_pressed_line_number(ev)
+        if iter != None:
             if ev.button == 1:
+                # left button pressed
                 self._set_line_breakpoint(iter.get_line())
             elif ev.button == 3:
+                # right button pressed
                 self._remove_line_breakpoint(iter.get_line())
 
     def on_source_list_row_activated(self, source_list, path, column):

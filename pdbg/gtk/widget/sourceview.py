@@ -85,10 +85,14 @@ class SourceView(gtksourceview.View):
         else:
             scroll_func()
 
-    def window_coords_to_iter(self, x, y):
-        (x_buf, y_buf) = self.window_to_buffer_coords( \
-            gtk.TEXT_WINDOW_LEFT, x, y)
-        return self.get_line_at_y(y_buf)[0]
+    def get_iter_of_pressed_line_number(self, event):
+        left_gutter = self.get_window(gtk.TEXT_WINDOW_LEFT)
+        if event.window == left_gutter:
+            (x_buf, y_buf) = self.window_to_buffer_coords(
+                gtk.TEXT_WINDOW_LEFT, int(event.x), int(event.y))
+            return self.get_line_at_y(y_buf)[0]
+        else:
+            return None
 
     def set_current_source(self, source):
         self._current_source = source
