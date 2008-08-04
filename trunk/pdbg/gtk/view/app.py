@@ -13,7 +13,32 @@ from ...app.patterns import Singleton
 from ..widget.mainnotebook import MainNotebook
 from toolbar import ToolbarView
 
+_dialog_messages = {
+    'error_req_source': _('Request for %s failed: %s'),
+    'conn_closed': _('Connection to debugger engine closed unexpectedly!'),
+}
+
 class AppView(View, Singleton):
+
+    def show_ok_message_dialog(self, type, title, msg_id, *args):
+        dialog = gtk.MessageDialog(self['window'],
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            type,
+            gtk.BUTTONS_OK,
+            _dialog_messages[msg_id] % args)
+        dialog.set_title(title)
+        dialog.run()
+        dialog.destroy()
+
+    def show_warning(self, msg_id, *args):
+        self.show_ok_message_dialog(gtk.MESSAGE_WARNING, 
+            _('Whoops!'),
+            msg_id, *args)
+
+    def show_error(self, msg_id, *args):
+        self.show_ok_message_dialog(gtk.MESSAGE_ERROR,
+            _('An Error Occurred!'),
+            msg_id, *args)
 
     @widget
     def _quit_item(self):

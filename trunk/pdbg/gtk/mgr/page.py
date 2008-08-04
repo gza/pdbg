@@ -12,6 +12,7 @@ from pdbg.app.mgr.connection import ConnectionManager
 from pdbg.app.config import Config
 from pdbg.app.source import Source, SourceCache
 from pdbg.dbgp.engineresponse import *
+from pdbg.dbgp.connection import ConnectionClosed
 from pdbg.gtk.view.app import AppView
 from pdbg.gtk.view.page import PageView
 
@@ -100,7 +101,14 @@ class PageManager(Manager):
         # Called from the gobject main loop when an event occurs on the 
         # connection socket.
         if condition == gobject.IO_IN:
-            self._conn_mgr.process_response()
+            try:
+                self._conn_mgr.process_response()
+            except ConnectionClosed, e:
+                self._conn_mgr.close_connection()
+                app_view = AppView.get_instance()
+                app_view['notebook'].set_current_page(self._page_num)
+                app_view.show_error('conn_closed')
+                app_view['notebook'].remove_page(self._page_num)
         elif condition == gobject.IO_HUP:
             self._conn_mgr.close_connection()
         # TODO: handle other conditions
@@ -130,6 +138,8 @@ class PageManager(Manager):
         file_uri = self._view.get_file_uri_from_list_path(path)
         if file_uri != self._view['source_view'].current_file_uri:
             self._view.update_source(self._source_cache[file_uri])
+        else:
+            self._view['uri_entry'].set_text(file_uri)
 
     def on_get_uri_button_clicked(self, *args):
         # Called by gtk when the get URI button is clicked, AND when enter
@@ -293,5 +303,6 @@ class PageManager(Manager):
             self._source_cache[entered_uri] = source
             self._view.update_source(source)
         else:
-            # TODO: do something ...
-            pass
+            app_view = AppView.get_instance()
+            app_view.show_warning('error_req_source', entered_uri, 
+                response.error_msg)
