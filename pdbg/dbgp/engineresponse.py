@@ -71,6 +71,10 @@ class EngineResponse(object):
         """
         return int(self.get_xpath_value('/dp:response/dp:error/@code'))
 
+    @property
+    def error_msg(self):
+        return self.get_xpath_value('/dp:response/dp:error/dp:message')
+
     def xpath(self, query):
         """Execute an XPath query on the response XML root."""
         return self._xml_root.xpath(query, namespaces=_response_namespaces)

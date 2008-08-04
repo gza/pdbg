@@ -80,7 +80,7 @@ class PageView(View):
     @widget
     def _uri_entry_label(self):
         label = gtk.Label()
-        label.set_text_with_mnemonic(_('Current _URI:'))
+        label.set_text_with_mnemonic(_('Remote _URI:'))
         return label
 
     @widget
@@ -90,7 +90,8 @@ class PageView(View):
     @widget
     def _get_uri_button(self):
         button = gtk.Button(_('Request File'))
-
+        button.set_tooltip_text(_('Request a file from the debugger engine'))
+        
         img = gtk.Image()
         img.set_from_stock(gtk.STOCK_OPEN, gtk.ICON_SIZE_MENU)
         button.set_image(img)
