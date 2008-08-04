@@ -115,6 +115,7 @@ class PageManager(Manager):
         return True
 
     def on_tab_close_button_clicked(self, button):
+        # Called by gtk when the close button on the pages tab is clicked.
         self._conn_mgr.close_connection()
         app_view = AppView.get_instance()
         app_view['notebook'].remove_page(self._page_num)
