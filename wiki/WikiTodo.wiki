@@ -1,12 +1,14 @@
 #summary Project TODO and Feature Ideas
-= Introduction =
 
-Add your content here.
+= Project TODO =
 
+= Feature Ideas =
 
-= Details =
+These features might not be added.  Yet they just might ...
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+== Interesting Ways to Get Source Files ==
+
+DBGp does not have a command to get "all the source". So more interesting methods must be used to allow the user to get their source files.
+
+  * Clicking on an include 'BLAH' in the source view widget requests the file. This would require knowing the include path. Xdebug supports eval, which could be used to break apart the return of get_include_path.  This would make the app PHP specific.
+  * An simple script could be written that indexes a project's source files.  The output of this script could be imported into pDBG to populate the Known URIs list.
