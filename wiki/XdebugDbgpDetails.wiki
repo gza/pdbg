@@ -8,5 +8,14 @@ Xdebug's support of DBGp is not complete. Some core commands and many extended c
 
 === stderr ===
 
-This command is not supported at all. The implementation in the Xdebug source is just a hardcoded error response.
+This command is not supported at all. The implementation in the Xdebug source is just a hardcoded error response. (2.0.3)
 
+== Extended Commands ==
+
+=== eval ===
+
+Supported by Xdebug. When the resulting property value is an array, only the first dimension of the array is returned. (2.0.3)
+
+=== expr ===
+
+Not supported (2.0.3)
