@@ -72,6 +72,7 @@ class PageView(View):
         button.set_relief(gtk.RELIEF_NONE)
         button.set_name('tab-close-button')
         button.set_property('can-focus', False)
+        button.set_tooltip_text(_('Close tab'))
 
         img = gtk.Image()
         img.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_MENU)
