@@ -18,12 +18,23 @@ from mgr.toolbar import ToolbarManager
 from view.app import AppView
 from view.about import AboutView
 
+_gtk_styles = \
+"""
+style "tab-close-button-style" {
+    xthickness = 0
+    ythickness = 0
+}
+widget "*.tab-close-button" style "tab-close-button-style"
+"""
+
 class App(Observable, Singleton):
 
     def __init__(self):
         super(App, self).__init__()
 
     def _setup(self):
+        gtk.rc_parse_string(_gtk_styles)
+
         config = Config.get_instance()
 
         # Connect application signal handlers.
