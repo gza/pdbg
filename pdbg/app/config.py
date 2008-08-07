@@ -19,12 +19,13 @@ class Config(dict, Singleton):
         self.update({
             'win_width': 800,
             'win_height': 600,
+            'current_line_background': '#444466',
+            'current_line_foreground': '#ffffff',
+            'style_scheme': 'classic',
             'app_title': 'pDBG - v0.1',
             'app_dir': app_dir,
             'asset_dir': asset_dir,
-            'current_line_background': '#444466',
-            'current_line_foreground': '#ffffff',
-            'style_scheme': 'classic'
+            'listener_timeout_ms': 100
         })
 
     def get_image_path(self, name):

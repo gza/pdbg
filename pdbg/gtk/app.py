@@ -56,7 +56,7 @@ class App(Observable, Singleton):
             listener.port))
 
         # Register a function to poll for incoming connections.
-        gobject.idle_add(self.on_idle)
+        gobject.timeout_add(config['listener_timeout_ms'], self.on_timeout)
 
     def run(self):
         self._setup()
@@ -68,7 +68,7 @@ class App(Observable, Singleton):
         about_view['about_dialog'].run()
         about_view['about_dialog'].hide()
 
-    def on_idle(self):
+    def on_timeout(self):
         ListenerManager.get_instance().accept_connection()
         return True
 
