@@ -70,6 +70,8 @@ class PageView(View):
     def _tab_button(self):
         button = gtk.Button()
         button.set_relief(gtk.RELIEF_NONE)
+        button.set_name('tab-close-button')
+        button.set_property('can-focus', False)
 
         img = gtk.Image()
         img.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_MENU)
