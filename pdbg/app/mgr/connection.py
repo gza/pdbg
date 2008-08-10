@@ -158,6 +158,9 @@ class ConnectionManager(Manager):
                 % (redirect_type,)
         self.send_command('stderr', { '-c': redirect_type }, observer=observer)
 
+    def send_context_names(self, depth='0', observer=None):
+        self.send_command('context_names', { '-d': depth }, observer=observer)
+
     def process_response(self):
         response = self._connection.recv_response()
         if response != None:

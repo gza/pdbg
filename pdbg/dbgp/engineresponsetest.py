@@ -90,6 +90,17 @@ _breakpoint_set_response_xml = \
           id="122490001"/>
 """
 
+_context_names_response_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="context_names" 
+          transaction_id="2">
+  <context name="Locals" id="0"/>
+  <context name="Superglobals" id="1"/>
+</response>
+"""
+
 _unknown_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
 <response xmlns="urn:debugger_protocol_v1" 
@@ -205,6 +216,14 @@ class TestBreakpointSetResponseClass(unittest.TestCase):
     def test_id(self):
         r = BreakpointSetResponse(_breakpoint_set_response_xml)
         self.assertEqual(r.id, '122490001')
+
+class TestContextNamesResponseClass(unittest.TestCase):
+    """Test the ContextNamesResponse class."""
+
+    def test_get_names(self):
+        r = ContextNamesResponse(_context_names_response_xml)
+        exp_ret = [('Locals', '0'), ('Superglobals', '1')]
+        self.assertEqual(r.get_names(), exp_ret)
 
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""
