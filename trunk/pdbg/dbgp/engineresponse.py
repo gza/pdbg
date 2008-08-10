@@ -191,6 +191,20 @@ class BreakpointSetResponse(EngineResponse):
 class BreakpointRemoveResponse(EngineResponse):
     """Represent a response to a breakpoint_remove command."""
 
+class ContextNamesResponse(EngineResponse):
+    """Represent a response to a context_names command."""
+
+    def get_names(self):
+        """Return a list of context names and their ids"""
+        xpath_results = self.xpath('/dp:response/dp:context')
+        ret = []
+        for xpath_result in xpath_results:
+            attrib = xpath_result.attrib
+            if not attrib.has_key('name') or not attrib.has_key('id'):
+                raise EngineResponseException('Invalid context element')
+            ret.append((attrib['name'], attrib['id']))
+        return ret
+
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1
 RESPONSE_BUILT = 2
