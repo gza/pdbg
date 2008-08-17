@@ -161,6 +161,10 @@ class ConnectionManager(Manager):
     def send_context_names(self, depth='0', observer=None):
         self.send_command('context_names', { '-d': depth }, observer=observer)
 
+    def send_context_get(self, context_id='0', depth='0', observer=None):
+        self.send_command('context_get', { '-d': depth, '-c': context_id }, 
+            observer=observer)
+
     def process_response(self):
         response = self._connection.recv_response()
         if response != None:

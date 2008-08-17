@@ -7,10 +7,11 @@ __version__ = "$Id$"
 
 import gtk
 import re
-from base import View, widget
-from ..widget.textlog import TextLog
-from ..widget.sourceview import SourceView
-from ..widget.sourcelist import SourceList
+from pdbg.gtk.view.base import View, widget
+from pdbg.gtk.widget.textlog import TextLog
+from pdbg.gtk.widget.sourceview import SourceView
+from pdbg.gtk.widget.sourcelist import SourceList
+from pdbg.gtk.widget.propertynotebook import PropertyNotebook
 
 def _build_tab_label(info):
     label = '[' + info['remote_ip'] + ']'
@@ -20,10 +21,21 @@ def _build_tab_label(info):
         label += ' ' + info['engine_version']
     return label
 
+def _build_tab_tip(info):
+    tip = _('Connection from %s on port %s') % (info['remote_ip'], info['remote_port'])
+    if info.has_key('engine'):
+        tip += ' (' + info['engine']
+    if info.has_key('engine_version'):
+        tip += ' ' + info['engine_version']
+    if info.has_key('engine') or info.has_key('engine_version'):
+        tip += ')'
+    return tip
+
 class PageView(View):
 
     def append_page_on_init(self, conn_info, notebook):
         self['tab_label'].set_text(_build_tab_label(conn_info))
+        self['tab_label'].set_tooltip_text(_build_tab_tip(conn_info))
         return notebook.append_page_with_button(
             self['outer_box'], 
             self['tab_label'],
@@ -61,6 +73,19 @@ class PageView(View):
         scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.add(self._source_list())
         return scroll
+
+    @widget
+    def _property_notebook(self):
+        notebook = PropertyNotebook()
+        return notebook
+
+    @widget
+    def _left_box(self):
+        box = gtk.VPaned()
+        box.pack1(self._source_list_scroll(), True, False)
+        box.pack2(self._property_notebook(), False, False)
+        box.set_position(400)
+        return box
 
     @widget
     def _tab_label(self):
@@ -181,7 +206,7 @@ class PageView(View):
         return notebook
 
     @widget
-    def _inner_box(self):
+    def _right_box(self):
         box = gtk.VPaned()
         box.pack1(self._source_box(), True, False)
         box.pack2(self._notebook(), False, False)
@@ -190,8 +215,8 @@ class PageView(View):
     @widget
     def _outer_box(self):
         box = gtk.HPaned()
-        box.pack1(self._source_list_scroll(), False, False)
-        box.pack2(self._inner_box(), True, False)
+        box.pack1(self._left_box(), False, False)
+        box.pack2(self._right_box(), True, False)
         box.set_position(200)
         return box
 

@@ -256,18 +256,22 @@ class PageManager(Manager):
             source_view.current_source.current_line = top['lineno']
             source_view.refresh_current_line()
             source_view.scroll_to_current_line()
+            self._conn_mgr.send_context_names(
+                observer=self.on_cont_context_names)
             return
 
         if self._source_cache.has_key(top['filename']):
             source = self._source_cache[top['filename']]
             source.current_line = top['lineno']
             self._view.update_source(source)
+            self._conn_mgr.send_context_names(
+                observer=self.on_cont_context_names)
         else:
             file_uri = top['filename']
-            callback = bind_params(self.on_source_update_view, stack)
+            callback = bind_params(self.on_cont_source, stack)
             mgr.send_source(file_uri, callback)
 
-    def on_source_update_view(self, mgr, response, last_stack):
+    def on_cont_source(self, mgr, response, last_stack):
         # Called by conn_mgr after on_cont_stack_get, with a source response.
         # Updates the source in the sourceview and the current line number.
         top = last_stack[0]
@@ -275,6 +279,22 @@ class PageManager(Manager):
         source.current_line = top['lineno']
         self._source_cache[top['filename']] = source
         self._view.update_source(source)
+
+    def on_cont_context_names(self, mgr, response):
+        # Called by conn_mgr after on_cont_source or on_cont_stack_get with a
+        # context_names response. Sends requests for all contexts.
+        notebook = self._view['property_notebook']
+        notebook.remove_all_pages()
+        for (name, id) in response.get_names():
+            observer = bind_params(self.on_cont_context_get, id)
+            self._conn_mgr.send_context_get(context_id=id, observer=observer)
+            notebook.append_property_page(id, name)
+
+    def on_cont_context_get(self, mgr, response, context_id):
+        if isinstance(response, ContextGetResponse):
+            notebook = self._view['property_notebook']
+            props = response.get_properties()
+            notebook.update_property_page(context_id, props)
     
     def on_breakpoint_set(self, mgr, response, source, line_num):
         # Called by conn_mgr with a breakpoint_set response. If the command

@@ -10,13 +10,14 @@ gettext.install('pdbg')
 
 import gobject
 import gtk
-from ..app.patterns import Observable, Singleton
-from ..app.config import Config
-from ..app.mgr.listener import ListenerManager
-from mgr.pages import PagesManager
-from mgr.toolbar import ToolbarManager
-from view.app import AppView
-from view.about import AboutView
+import logging
+from pdbg.app.patterns import Observable, Singleton
+from pdbg.app.config import Config
+from pdbg.app.mgr.listener import ListenerManager
+from pdbg.gtk.mgr.pages import PagesManager
+from pdbg.gtk.mgr.toolbar import ToolbarManager
+from pdbg.gtk.view.app import AppView
+from pdbg.gtk.view.about import AboutView
 
 _gtk_styles = \
 """
@@ -33,9 +34,14 @@ class App(Observable, Singleton):
         super(App, self).__init__()
 
     def _setup(self):
-        gtk.rc_parse_string(_gtk_styles)
-
         config = Config.get_instance()
+
+        logging.basicConfig(
+            level=config['logging_level'], 
+            format='%(asctime)s %(levelname)s %(message)s')
+
+        # Override some of the theme styles.
+        gtk.rc_parse_string(_gtk_styles)
 
         # Connect application signal handlers.
         app_view = AppView.get_instance()
