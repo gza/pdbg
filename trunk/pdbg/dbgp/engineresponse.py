@@ -9,15 +9,78 @@ from lxml import etree
 from StringIO import StringIO
 from types import ClassType
 from base64 import b64decode
+from logging import getLogger
 import re
 
 _response_namespaces = {
     'dp': 'urn:debugger_protocol_v1',
 }
 
+_property_req_fields = [
+    'name',
+    'fullname',
+    'type',
+]
+
 class EngineResponseException(Exception):
     """An error occurred in the EngineResponse class."""
     pass
+
+class EngineResponseProperty(dict):
+
+    def __init__(self, xml_node):
+        self._xml_node = xml_node
+        self._logger = getLogger()
+        self._children = []
+        self._loaded_ok = False
+
+        self['numchildren'] = 0
+        self['children'] = False
+
+        self._load_attribs()
+        if self._loaded_ok:
+            self._load_value()
+            self._load_children()
+
+    def _load_attribs(self):
+        attrib = self._xml_node.attrib
+        for req_attrib in _property_req_fields:
+            if not attrib.has_key(req_attrib):
+                self._logger.warning("property missing %s: %s", req_attrib, 
+                    self._xml_node)
+                return
+        self._loaded_ok = True
+        for key in attrib.keys():
+            self[key] = attrib[key]
+        if self.has_key('children'):
+            self['children'] = (self['children'] == '1')
+        if self.has_key('numchildren'):
+            self['numchildren'] = int(self['numchildren'])
+
+    def _load_value(self):
+        if self.has_key('encoding'):
+            if self['encoding'] == 'base64':
+                self['value'] = b64decode(self._xml_node.text)
+            else:
+                logger = getLogger()
+                logger.warning("Invalid encoding: %s", self['encoding'])
+        else:
+            self['value'] = self._xml_node.text
+
+    def _load_children(self):
+        if not self['children']:
+            return
+        for child in self._xml_node:
+            prop = EngineResponseProperty(child)
+            if prop.loaded_ok:
+                self._children.append(prop)
+
+    @property
+    def loaded_ok(self):
+        return self._loaded_ok
+
+    def get_children(self):
+        return self._children
 
 class EngineResponse(object):
 
@@ -204,6 +267,19 @@ class ContextNamesResponse(EngineResponse):
                 raise EngineResponseException('Invalid context element')
             ret.append((attrib['name'], attrib['id']))
         return ret
+
+class ContextGetResponse(EngineResponse):
+    """Represent a response to a context_get command."""
+
+    def get_properties(self):
+        """Return a list of properties in the context"""
+        query_results = self.xpath('/dp:response/dp:property')
+        props = []
+        for prop_node in query_results:
+            prop = EngineResponseProperty(prop_node)
+            if prop.loaded_ok:
+                props.append(prop)
+        return props
 
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1

@@ -101,6 +101,37 @@ _context_names_response_xml = \
 </response>
 """
 
+_context_get_response_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="context_get" 
+          transaction_id="1" 
+          context="0">
+  <property name="a" 
+            fullname="$a" 
+            address="142182836" 
+            type="object" 
+            children="1" 
+            classname="A" 
+            numchildren="1">
+    <property name="x" 
+              fullname="$a-&gt;x" 
+              facet="public" 
+              address="142184784" 
+              type="array" 
+              children="1" 
+              numchildren="3" />
+  </property>
+  <property name="x" 
+            fullname="$x" 
+            address="142184296" 
+            type="string" 
+            size="8" 
+            encoding="base64">aGkgd29ybGQ=</property>
+</response>
+"""
+
 _unknown_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
 <response xmlns="urn:debugger_protocol_v1" 
@@ -224,6 +255,31 @@ class TestContextNamesResponseClass(unittest.TestCase):
         r = ContextNamesResponse(_context_names_response_xml)
         exp_ret = [('Locals', '0'), ('Superglobals', '1')]
         self.assertEqual(r.get_names(), exp_ret)
+
+class TestContextGetResponseClass(unittest.TestCase):
+    """Test the ContextGetResponse class."""
+
+    def test_get_properties(self):
+        r = ContextGetResponse(_context_get_response_xml)
+        
+        props = r.get_properties()
+        self.assertEqual(len(props), 2)
+
+        self.assertEqual(props[0]['name'], 'a')
+        self.assertEqual(props[0]['children'], True)
+        self.assertEqual(props[0]['numchildren'], 1)
+
+        children = props[0].get_children()
+        self.assertEqual(len(children), 1)
+        self.assertEqual(children[0]['name'], 'x')
+        self.assertEqual(children[0]['fullname'], '$a->x')
+        self.assertEqual(children[0]['numchildren'], 3)
+
+        self.assertEqual(props[1]['name'], 'x')
+        self.assertEqual(props[1]['children'], False)
+
+        children = props[1].get_children()
+        self.assertEqual(len(children), 0)
 
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""

@@ -17,6 +17,7 @@ class Config(dict, Singleton):
         asset_dir = os.path.join(app_dir, 'assets')
 
         self.update({
+            'logging_level': 10,
             'win_width': 800,
             'win_height': 600,
             'current_line_background': '#444466',
