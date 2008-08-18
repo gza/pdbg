@@ -15,6 +15,7 @@ from pdbg.dbgp.engineresponse import *
 from pdbg.dbgp.connection import ConnectionClosed
 from pdbg.gtk.view.app import AppView
 from pdbg.gtk.view.page import PageView
+from pdbg.gtk.view.changeproperty import ChangePropertyView
 
 class PageManager(Manager):
 
@@ -63,6 +64,10 @@ class PageManager(Manager):
         self._view['uri_entry'].connect(
             'activate',
             self.on_get_uri_button_clicked)
+        
+        self._view['property_notebook'].connect(
+            'property-clicked',
+            self.on_property_clicked)
 
     @property
     def conn_mgr(self):
@@ -157,6 +162,16 @@ class PageManager(Manager):
         else:
             callback = bind_params(self.on_get_uri_source, entered_uri)
             self._conn_mgr.send_source(entered_uri, callback)
+
+    def on_property_clicked(self, notebook, column_id, name, type, value):
+        if column_id == 'value':
+            prop_view = ChangePropertyView()
+            dialog = prop_view['prop_dialog']
+            response = dialog.run()
+            dialog.hide()
+            if response == gtk.RESPONSE_ACCEPT:
+                self._conn_mgr.send_property_set(name, type=dialog.get_type(), 
+                    value=dialog.get_value(), observer=self.on_prop_set)
 
     def on_command(self, mgr, command):
         # Called by conn_mgr when a command is being sent. The command string
@@ -256,20 +271,19 @@ class PageManager(Manager):
             source_view.current_source.current_line = top['lineno']
             source_view.refresh_current_line()
             source_view.scroll_to_current_line()
-            self._conn_mgr.send_context_names(
-                observer=self.on_cont_context_names)
+            mgr.send_context_names(observer=self.on_cont_context_names)
             return
 
         if self._source_cache.has_key(top['filename']):
             source = self._source_cache[top['filename']]
             source.current_line = top['lineno']
             self._view.update_source(source)
-            self._conn_mgr.send_context_names(
-                observer=self.on_cont_context_names)
+            mgr.send_context_names(observer=self.on_cont_context_names)
         else:
             file_uri = top['filename']
             callback = bind_params(self.on_cont_source, stack)
             mgr.send_source(file_uri, callback)
+            mgr.send_context_names(observer=self.on_cont_context_names)
 
     def on_cont_source(self, mgr, response, last_stack):
         # Called by conn_mgr after on_cont_stack_get, with a source response.
@@ -284,17 +298,18 @@ class PageManager(Manager):
         # Called by conn_mgr after on_cont_source or on_cont_stack_get with a
         # context_names response. Sends requests for all contexts.
         notebook = self._view['property_notebook']
-        notebook.remove_all_pages()
-        for (name, id) in response.get_names():
+        names = response.get_names()
+        for (name, id) in names:
             observer = bind_params(self.on_cont_context_get, id)
-            self._conn_mgr.send_context_get(context_id=id, observer=observer)
-            notebook.append_property_page(id, name)
+            mgr.send_context_get(context_id=id, observer=observer)
+            notebook.setup_property_page(id, name)
+        notebook.remove_invalid_pages(id for (name, id) in names)
 
     def on_cont_context_get(self, mgr, response, context_id):
         if isinstance(response, ContextGetResponse):
             notebook = self._view['property_notebook']
             props = response.get_properties()
-            notebook.update_property_page(context_id, props)
+            notebook.update_properties(context_id, props)
     
     def on_breakpoint_set(self, mgr, response, source, line_num):
         # Called by conn_mgr with a breakpoint_set response. If the command
@@ -327,3 +342,6 @@ class PageManager(Manager):
             app_view = AppView.get_instance()
             app_view.show_warning('error_req_source', entered_uri, 
                 response.error_msg)
+
+    def on_prop_set(self, mgr, response):
+        print response
