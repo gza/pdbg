@@ -165,6 +165,12 @@ class ConnectionManager(Manager):
         self.send_command('context_get', { '-d': depth, '-c': context_id }, 
             observer=observer)
 
+    def send_property_set(self, full_name, depth='0', type=None, value=None, observer=None):
+        args = { '-n': full_name, '-d': depth }
+        if type != None:
+            args['-t'] = type
+        self.send_command('property_set', args, data=value, observer=observer)
+
     def process_response(self):
         response = self._connection.recv_response()
         if response != None:
