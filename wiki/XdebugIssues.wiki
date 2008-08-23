@@ -2,7 +2,7 @@
 
 The following bugs/issues exist in Xdebug:
 
-  * the property_set implementation sets the success attribute twice on unsupported type.
+  * the property_set implementation sets the success attribute twice on unsupported type. this causes lxml to puke an exception.
   * there is no way to know which types from typemap_get can be set in property_set.
   * stderr is not implemented.
-  * how errors are handled is inconsistent.
+  * how errors are handled is inconsistent (ie some set an attribute on response, some put a message in a node in response).
