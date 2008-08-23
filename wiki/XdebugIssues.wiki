@@ -1,0 +1,7 @@
+#summary Issues Found In Xdebug
+
+The following bugs/issues exist in Xdebug:
+
+  * the property_set implementation sets the success attribute twice on unsupported type.
+  * there is no way to know which types from typemap_get can be set in property_set.
+  * stderr is not implemented.
