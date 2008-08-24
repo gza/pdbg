@@ -23,6 +23,10 @@ This command does not return a dollar sign prefix on variable names, whereas con
 
 The implementation of this command sets the success attribute twice on an unsupported type. this causes lxml to puke an exception.
 
+=== context_get ===
+
+When remote_mode is jit, calling context_get does not return any variables in context 0 (Locals).
+
 == Extended Commands ==
 
 === eval ===
