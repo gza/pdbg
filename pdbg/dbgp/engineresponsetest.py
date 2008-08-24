@@ -54,6 +54,37 @@ _status_error_xml = \
 </response>
 """
 
+_typemap_get_xml = \
+"""<?xml version="1.0" encoding="iso-8859-1"?>
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+          xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+          command="typemap_get" 
+          transaction_id="2">
+  <map name="bool" 
+       type="bool" 
+       xsi:type="xsd:boolean" />
+  <map name="int" 
+       type="int" 
+       xsi:type="xsd:decimal" />
+  <map name="float" 
+       type="float" 
+       xsi:type="xsd:double" />
+  <map name="string" 
+       type="string" 
+       xsi:type="xsd:string" />
+  <map name="null" 
+       type="null" />
+  <map name="array" 
+       type="hash" />
+  <map name="object" 
+       type="object" />
+  <map name="resource" 
+       type="resource" />
+</response>
+"""
+
 _source_response_xml = \
 """<?xml version="1.0" encoding="iso-8859-1"?>
 <response xmlns="urn:debugger_protocol_v1" 
@@ -129,6 +160,19 @@ _context_get_response_xml = \
             type="string" 
             size="8" 
             encoding="base64">aGkgd29ybGQ=</property>
+</response>
+"""
+
+_property_get_response_xml = \
+"""
+<response xmlns="urn:debugger_protocol_v1" 
+          xmlns:xdebug="http://xdebug.org/dbgp/xdebug" 
+          command="property_get" 
+          transaction_id="17">
+  <property name="$x" 
+            fullname="$x" 
+            address="142362792" 
+            type="int">2</property>
 </response>
 """
 
@@ -223,6 +267,19 @@ class TestStatusResponseClass(unittest.TestCase):
         r = StatusResponse(_status_response_xml)
         self.assertEqual(r.reason, 'ok')
 
+class TestTypemapGetResponseClass(unittest.TestCase):
+    """Test the TypemapGetResponse class."""
+
+    def test_typemap_get(self):
+        r = TypemapGetResponse(_typemap_get_xml)
+        type_map = r.get_type_map()
+        self.assertEqual(len(type_map), 8)
+        self.assertEqual(type_map[2].name, 'float')
+        self.assertEqual(type_map[2].type, 'float')
+        self.assertEqual(type_map[2].xsi_type, 'xsd:double')
+        self.assertEqual(type_map[4].xsi_type, None)
+        self.assertEqual(type_map[5].type, 'hash')
+
 class TestSourceResponseClass(unittest.TestCase):
     """Test the SourceResponse class."""
 
@@ -280,6 +337,16 @@ class TestContextGetResponseClass(unittest.TestCase):
 
         children = props[1].get_children()
         self.assertEqual(len(children), 0)
+
+class TestPropertyGetResponseClass(unittest.TestCase):
+    """Test the PropertyGetResponse class."""
+
+    def test_get_property(self):
+        r = PropertyGetResponse(_property_get_response_xml)
+        prop = r.get_property()
+
+        self.assertEqual(prop['fullname'], '$x')
+        self.assertEqual(prop['value'], '2')
 
 class TestEngineResponseBuilderClass(unittest.TestCase):
     """Test the EngineResponseBuilder class."""

@@ -5,7 +5,6 @@
 
 __version__ = "$Id$"
 
-import re
 from pdbg.app.patterns import Manager, Singleton
 from pdbg.dbgp.socketwrapper import SocketWrapper
 from pdbg.dbgp.connectionlistener import ConnectionListener
@@ -22,62 +21,22 @@ _event_names = (
     'can_interact',
 )
 
-def expected_response(type):
-    def decorator(fn):
-        def check_type(*arguments, **keywords):
-            if not isinstance(arguments[2], type):
-                raise TypeError, "Expected %s" % (type.__name__,)
-            return fn(*arguments, **keywords)
-        return check_type
-    return decorator
+(
+    STATUS_AWAITING_INIT,
+    STATUS_READY,
+    STATUS_STOPPED,
+) = range(3)
 
 def _trans_id_condition(id):
     def condition(conn_mgr, resp):
         return hasattr(resp, 'transaction_id') and resp.transaction_id == id
     return condition
 
-class ConnectionState(object):
-
-    @classmethod
-    def get_name(klass):
-        underscore = lambda m: '_' + m.group(0).lower()
-        return re.sub('[A-Z]', underscore, klass.__name__).lstrip('_')
-
-class AwaitingInit(ConnectionState):
-
-    @classmethod
-    @expected_response(InitResponse)
-    def run(klass, mgr, init):
-        remote_address = mgr.connection.socket.handle.getpeername()
-        mgr.fire('init_packet', init, remote_address)
-        return Ready
-
-class Ready(ConnectionState):
-
-    @classmethod
-    def run(klass, mgr, response):
-        return None
-
-class Stopped(ConnectionState):
-
-    @classmethod
-    def run(klass, mgr, response):
-        return None
-
-class AwaitingStatus(ConnectionState):
-
-    @classmethod
-    @expected_response(StatusResponse)
-    def run(klass, mgr, response):
-        status = response.status
-        if status == 'starting' or status == 'break':
-            return Ready
-        else:
-            if status == 'stopping' or status == 'stopped':
-                mgr.close_connection()
-                return Stopped
-            elif status == 'running':
-                raise ConnectionManagerException, "Async is currently not supported."
+def _aggregrate_func(*funcs):
+    def aggregate_func(*arguments, **keywords):
+        for func in funcs:
+            if func: func(*arguments, **keywords)
+    return aggregate_func
 
 class ConnectionManagerException(Exception):
     pass
@@ -86,12 +45,13 @@ class ConnectionManager(Manager):
 
     def __init__(self):
         super(Manager, self).__init__()
-        self._state = AwaitingInit
+        self._state = STATUS_AWAITING_INIT
         self._num_unresponded = 1
+        self._type_map = []
         self.register_event(*_event_names)
 
     def _change_state(self, state):
-        self.fire('state_changed', self._state.get_name(), state.get_name())
+        self.fire('state_changed', self._state)
         self._state = state
 
     @property
@@ -100,7 +60,7 @@ class ConnectionManager(Manager):
 
     @property
     def can_interact(self):
-        return self._num_unresponded == 0 and self._state == Ready
+        return self._num_unresponded == 0 and self._state == STATUS_READY
 
     def setup(self, connection):
         self._connection = connection
@@ -108,8 +68,14 @@ class ConnectionManager(Manager):
     def close_connection(self):
         self.connection.close()
 
+    def get_type_display_names(self, filter=None):
+        names = {}
+        for type in self._type_map:
+            names[type.name] = type.name.capitalize()
+        return names
+
     def send_command(self, command_str, arguments=[], data=None, \
-        change_to=None, observer=None):
+        observer=None):
         could_interact = self.can_interact
         command = self.connection.send_command(command_str, arguments, data)
         self._num_unresponded += 1
@@ -117,18 +83,22 @@ class ConnectionManager(Manager):
             condition = _trans_id_condition(command.transaction_id)
             self.add_observer('response_handled', observer, condition, True)
         self.fire('command_sent', command)
-        if change_to != None:
-            self._change_state(change_to)
         if could_interact and not self.can_interact:
             self.fire('can_interact', False)
 
     def send_status(self, observer=None):
-        self.send_command('status', change_to=AwaitingStatus, observer=observer)
+        observer = _aggregrate_func(self._on_status_response, observer)
+        self.send_command('status', observer=observer)
+
+    def send_typemap_get(self, observer=None):
+        observer = _aggregrate_func(self._on_typemap_get, observer)
+        self.send_command('typemap_get', observer=observer)
 
     def send_continuation(self, name, observer=None):
         if name not in ('run','detach','step_into','step_over','step_out'):
             raise ConnectionManagerException, "%s is not a continuation command" % (name,)
-        self.send_command(name, change_to=AwaitingStatus, observer=observer)
+        observer = _aggregrate_func(self._on_status_response, observer)
+        self.send_command(name, observer=observer)
 
     def send_stack_get(self, observer=None):
         self.send_command('stack_get', observer=observer)
@@ -165,8 +135,12 @@ class ConnectionManager(Manager):
         self.send_command('context_get', { '-d': depth, '-c': context_id }, 
             observer=observer)
 
-    def send_property_set(self, full_name, depth='0', type=None, value=None, observer=None):
-        args = { '-n': full_name, '-d': depth }
+    def send_property_get(self, full_name, depth='0', context='0', observer=None):
+        args = { '-n': full_name, '-d': depth, '-c': context }
+        self.send_command('property_get', args, observer=observer)
+
+    def send_property_set(self, full_name, depth='0', context='0', type=None, value=None, observer=None):
+        args = { '-n': full_name, '-d': depth, '-c': context }
         if type != None:
             args['-t'] = type
         self.send_command('property_set', args, data=value, observer=observer)
@@ -177,13 +151,33 @@ class ConnectionManager(Manager):
             if type(response) == StreamResponse:
                 self.fire('stream_response_received', response)
                 return
+            elif type(response) == InitResponse:
+                remote_address = self.connection.socket.handle.getpeername()
+                self.fire('init_packet', response, remote_address)
+                self._status = STATUS_READY
             self._num_unresponded -= 1
             self.fire('response_received', response)
-            new_state = self._state.run(self, response)
-            if new_state != None:
-                self._change_state(new_state)
             self.fire('response_handled', response)
             # if can_interact is True here, then it must have changed as a 
             # result of this call to process_response.
             if self.can_interact:
                 self.fire('can_interact', True)
+
+    def _on_status_response(self, mgr, response):
+        if not isinstance(response, StatusResponse):
+            self._change_state(STATUS_STOPPED)
+            # TODO: log something ...
+            return
+        status = response.status
+        if status == 'starting' or status == 'break':
+            self._change_state(STATUS_READY)
+        else:
+            if status == 'stopping' or status == 'stopped':
+                self.close_connection()
+                self._change_state(STATUS_STOPPED)
+            elif status == 'running':
+                raise ConnectionManagerException, "Async is currently not supported."
+
+    def _on_typemap_get(self, mgr, response):
+        if isinstance(response, TypemapGetResponse):
+            self._type_map = response.get_type_map()
