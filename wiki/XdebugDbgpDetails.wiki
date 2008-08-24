@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Xdebug's support of DBGp is not complete. Some core commands and many extended commands are not supported. This page details Xdebug's DBGp support.
+Xdebug's support of DBGp is not complete. Some core commands and many extended commands are not supported. Others have bugs. This page details Xdebug's DBGp support.
 
 == General Issues ==
 
