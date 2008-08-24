@@ -12,8 +12,17 @@ from base64 import b64decode
 from logging import getLogger
 import re
 
+_DEBUGGER_PROTOCOL_NS = 'urn:debugger_protocol_v1'
+_DEBUGGER_PROTOCOL = '{%s}' % _DEBUGGER_PROTOCOL_NS
+_XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
+_XSI = '{%s}' % _XSI_NS
+_XSD_NS = 'http://www.w3.org/2001/XMLSchema'
+_XSD = '{%s}' % _XSD_NS
+
 _response_namespaces = {
-    'dp': 'urn:debugger_protocol_v1',
+     'dp': _DEBUGGER_PROTOCOL_NS, 
+    'xsi': _XSI_NS, 
+    'xsd': _XSD_NS
 }
 
 _property_req_fields = [
@@ -81,6 +90,25 @@ class EngineResponseProperty(dict):
 
     def get_children(self):
         return self._children
+
+class TypeMapElement(object):
+
+    def __init__(self, name, type, xsi_type=None):
+        self._name = name
+        self._type = type
+        self._xsi_type = xsi_type
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def xsi_type(self):
+        return self._xsi_type
 
 class EngineResponse(object):
 
@@ -214,6 +242,22 @@ class StatusResponse(EngineResponse):
         """
         return self.get_xpath_value('/dp:response/@reason')
 
+class TypemapGetResponse(EngineResponse):
+    """Represent a response to a typemap_get command."""
+
+    def get_type_map(self):
+        results = self.xpath('/dp:response/dp:map')
+        map = []
+
+        for result in results:
+            attrib = result.attrib
+            if attrib.has_key(_XSI+'type'):
+                xsi_type = attrib[_XSI+'type']
+            else:
+                xsi_type = None
+            map.append(TypeMapElement(attrib['name'], attrib['type'], xsi_type))
+        return map
+
 class SourceResponse(EngineResponse):
     """Represent a response to a source command."""
 
@@ -280,6 +324,22 @@ class ContextGetResponse(EngineResponse):
             if prop.loaded_ok:
                 props.append(prop)
         return props
+
+class PropertyGetResponse(EngineResponse):
+    """Represent a response to a property_get command."""
+
+    def get_property(self):
+        """Return properties of a property"""
+        query_results = self.xpath('/dp:response/dp:property')
+        props = []
+        if len(query_results) > 0:
+            prop = EngineResponseProperty(query_results[0])
+            if prop.loaded_ok:
+                return prop
+        return None
+
+class PropertySetResponse(EngineResponse):
+    """Represent a response to a property_set command."""
 
 BUILDING_RESPONSE_AMOUNT = 0
 BUILDING_RESPONSE_DATA   = 1

@@ -14,42 +14,45 @@ _DIALOG_BUTTONS = (
     gtk.STOCK_OK, gtk.RESPONSE_ACCEPT
 )
 
-_TYPE_COMBO_NAMES = (
-    _('Automatic'),
-    _('Boolean'),
-    _('Float'),
-    _('Integer'),
-    _('String'),
-)
-
-(
-    TYPE_AUTO,
-    TYPE_BOOLEAN,
-    TYPE_FLOAT,
-    TYPE_INT,
-    TYPE_STRING
-) = range(5)
+_SETTABLE_TYPES = set((
+    'int',
+    'bool',
+    'float',
+    'string'
+))
 
 class ChangePropertyDialog(gtk.Dialog):
 
-    def __init__(self, parent):
+    def __init__(self, parent, current_type, display_names):
         gtk.Dialog.__init__(self, _('Change Property Value'), parent, 
             _DIALOG_FLAGS, _DIALOG_BUTTONS)
+        display_names = [i for i in display_names.items() if i[0] in _SETTABLE_TYPES]
+        display_names.sort(lambda a, b: cmp(a[1], b[1]))
+        type_idxs = [idx for (idx, n) in enumerate(display_names) if n[0] == current_type]
+        if len(type_idxs) > 0:
+            self._current_idx = type_idxs[0]
+        else:
+            self._current_idx = None
+        self._display_names = display_names
         self._setup_controls()
 
     def get_value(self):
         return self._value_entry.get_text()
 
     def get_type(self):
-        return self._type_combo.get_active()
+        active_idx = self._type_combo.get_active()
+        return self._display_names[active_idx][0]
 
     def _setup_controls(self):
         type_label = gtk.Label(_('Type:'))
         type_combo = gtk.combo_box_new_text()
 
-        for name in _TYPE_COMBO_NAMES:
-            type_combo.append_text(name)
-        type_combo.set_active(TYPE_AUTO)
+        for (type, display) in self._display_names:
+            type_combo.append_text(display)
+        if self._current_idx != None:
+            type_combo.set_active(self._current_idx)
+        else:
+            type_combo.set_active(0)
 
         value_label = gtk.Label(_('Value:'))
         value_entry = gtk.Entry()

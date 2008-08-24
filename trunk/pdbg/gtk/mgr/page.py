@@ -17,12 +17,15 @@ from pdbg.gtk.view.app import AppView
 from pdbg.gtk.view.page import PageView
 from pdbg.gtk.view.changeproperty import ChangePropertyView
 
+_NUM_INIT_STEPS = 5
+
 class PageManager(Manager):
 
     def __init__(self):
         super(Manager, self).__init__()
         self._source_cache = SourceCache()
         self._page_num = None
+        self._init_steps_done = set()
 
     def setup(self, connection):
         """Setup the manager."""
@@ -163,15 +166,31 @@ class PageManager(Manager):
             callback = bind_params(self.on_get_uri_source, entered_uri)
             self._conn_mgr.send_source(entered_uri, callback)
 
-    def on_property_clicked(self, notebook, column_id, name, type, value):
+    def on_property_clicked(self, notebook, column_id, context_id, name, type, value):
+        if not self._conn_mgr.can_interact:
+            return
         if column_id == 'value':
-            prop_view = ChangePropertyView()
+            display_names = self._conn_mgr.get_type_display_names()
+            prop_view = ChangePropertyView(type, display_names)
             dialog = prop_view['prop_dialog']
             response = dialog.run()
             dialog.hide()
             if response == gtk.RESPONSE_ACCEPT:
+                callback = bind_params(self.on_prop_set, name, context_id)
                 self._conn_mgr.send_property_set(name, type=dialog.get_type(), 
-                    value=dialog.get_value(), observer=self.on_prop_set)
+                    value=dialog.get_value(), context=context_id, 
+                    observer=callback)
+
+    def on_check_init_steps(self):
+        if len(self._init_steps_done) == _NUM_INIT_STEPS:
+            # The page's initial state is prepared, make it show up.
+            self._view['outer_box'].show_all()
+            # Make this page be on top in the notebook.
+            app_view = AppView.get_instance()
+            app_view['notebook'].set_current_page(self._page_num)
+            return False
+        else:
+            return True
 
     def on_command(self, mgr, command):
         # Called by conn_mgr when a command is being sent. The command string
@@ -204,8 +223,17 @@ class PageManager(Manager):
             app_view['notebook'])
 
         file_uri = init.file_uri
-        callback = bind_params(self.on_init_source, file_uri)
-        mgr.send_source(file_uri, callback)
+        src_callback = bind_params(self.on_init_source, file_uri)
+
+        mgr.send_source(file_uri, observer=src_callback)
+        mgr.send_typemap_get(observer=self.on_init_typemap_get)
+        mgr.send_stdout(observer=self.on_init_stdout)
+        mgr.send_stderr(observer=self.on_init_stderr)
+        mgr.send_status(observer=self.on_init_status)
+
+        config = Config.get_instance()
+        gobject.timeout_add(config['init_check_timeout_ms'], 
+            self.on_check_init_steps)
 
     def on_init_source(self, mgr, response, init_file_uri):
         # Called by conn_mgr after on_init_packet when the source of the script
@@ -214,13 +242,13 @@ class PageManager(Manager):
         source = Source(init_file_uri, response.source)
         self._source_cache[init_file_uri] = source
         self._view.update_source(source)
+        self._init_steps_done.add('source')
 
-        mgr.send_stdout(observer=self.on_init_stdout)
+    def on_init_typemap_get(self, mgr, response):
+        self._init_steps_done.add('typemap_get')
 
     def on_init_stdout(self, mgr, response):
-        # Called by conn_mgr after on_init_source with the result of the stdout
-        # command.
-        mgr.send_stderr(observer=self.on_init_stderr)
+        self._init_steps_done.add('stdout')
 
     def on_init_stderr(self, mgr, response):
         # Called by conn_mgr after on_init_stdout with the result of the stderr
@@ -229,18 +257,14 @@ class PageManager(Manager):
         # v2.0.3)
         if not response.successful:
             self._view.remove_stderr_page()
-        mgr.send_status(self.on_init_status)
+        self._init_steps_done.add('stderr')
 
     def on_init_status(self, mgr, response):
         # Called by conn_mgr after on_init_stderr with the initial status of
         # the debugger engine.  Makes the new tab page show up.
 
-        # The page's initial state is prepared, make it show up.
-        self._view['outer_box'].show_all()
-
-        # Make this page be on top in the notebook.
-        app_view = AppView.get_instance()
-        app_view['notebook'].set_current_page(self._page_num)
+        # TODO: something will be here eventually ...
+        self._init_steps_done.add('status')
 
     def on_cont_status(self, mgr, response):
         # Called by conn_mgr when a status response is received resulting from
@@ -309,7 +333,7 @@ class PageManager(Manager):
         if isinstance(response, ContextGetResponse):
             notebook = self._view['property_notebook']
             props = response.get_properties()
-            notebook.update_properties(context_id, props)
+            notebook.refresh_properties(context_id, props)
     
     def on_breakpoint_set(self, mgr, response, source, line_num):
         # Called by conn_mgr with a breakpoint_set response. If the command
@@ -343,5 +367,18 @@ class PageManager(Manager):
             app_view.show_warning('error_req_source', entered_uri, 
                 response.error_msg)
 
-    def on_prop_set(self, mgr, response):
-        print response
+    def on_prop_set(self, mgr, response, name, context_id):
+        if isinstance(response, PropertySetResponse):
+            callback = bind_params(self.on_prop_set_prop_get, context_id)
+            mgr.send_property_get(name, context=context_id, observer=callback) 
+        else:
+            # TODO: do something ...
+            pass
+
+    def on_prop_set_prop_get(self, mgr, response, context_id):
+        if isinstance(response, PropertyGetResponse):
+            prop = response.get_property()
+            self._view['property_notebook'].update_property(context_id, prop)
+        else:
+            # TODO: do something ...
+            pass

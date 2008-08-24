@@ -26,7 +26,8 @@ class Config(dict, Singleton):
             'app_title': 'pDBG - v0.1',
             'app_dir': app_dir,
             'asset_dir': asset_dir,
-            'listener_timeout_ms': 100
+            'listener_timeout_ms': 100,
+            'init_check_timeout_ms': 100
         })
 
     def get_image_path(self, name):

@@ -30,6 +30,19 @@ _COLUMN_TYPES = (
     gobject.TYPE_STRING
 )
 
+def _get_prop_display_value(prop):
+    if prop['type'] in ('string', 'int', 'float'):
+        return prop['value']
+    elif prop['type'] == 'bool':
+        if prop['value'] in ('0', 'false'):
+            return 'false'
+        else:
+            return 'true'
+    elif prop['type'] == 'uninitialized':
+        return 'uninitialized'
+    else:
+        return 'cannot render'
+
 class PropertyPageModel(gtk.ListStore):
 
     def __init__(self):
@@ -117,31 +130,34 @@ class PropertyNotebook(gtk.Notebook):
                 page.get_child().get_model().clear()
         else:
             page = self._create_scrolled_property_page()
-            page.get_child().connect('row-activated', self.on_row_activated)
+            page.get_child().connect('row-activated', self.on_row_activated, page_id)
             self.append_page(page, gtk.Label(label))
             page.show_all()
             self._pages[page_id] = page
 
-    def update_properties(self, page_id, props):
+    def refresh_properties(self, page_id, props):
         page  = self._pages[page_id]
         model = page.get_child().get_model()
         names = []
         for prop in props:
-            if prop['type'] in ('string', 'int', 'float'):
-                value = prop['value']
-            elif prop['type'] == 'uninitialized':
-                value = 'uninitialized'
-            else:
-                value = 'cannot render'
+            value = _get_prop_display_value(prop)
             model.set_property(prop['fullname'], prop['type'], value)
             names.append(prop['fullname'])
         model.remove_invalid_properties(names)
 
-    def on_row_activated(self, page, path, column):
+    def update_property(self, page_id, prop):
+        page  = self._pages[page_id]
+        model = page.get_child().get_model()
+        # TODO: maybe set_property shouldn't be used here, since it adds it
+        # if it does not exist.
+        value = _get_prop_display_value(prop)
+        model.set_property(prop['fullname'], prop['type'], value)
+
+    def on_row_activated(self, page, path, column, page_id):
         model = page.get_model()
         iter  = model.get_iter(path)
         cols  = model.get(iter, COLUMN_NAME, COLUMN_TYPE, COLUMN_VALUE)
-        self.emit('property-clicked', column.id, *cols)
+        self.emit('property-clicked', column.id, page_id, *cols)
 
     def _create_scrolled_property_page(self):
         scroll = gtk.ScrolledWindow()
@@ -157,6 +173,7 @@ PropertyNotebook.property_clicked = gobject.signal_new(
     gobject.SIGNAL_RUN_LAST,
     gobject.TYPE_NONE,
     (
+        gobject.TYPE_STRING, 
         gobject.TYPE_STRING, 
         gobject.TYPE_STRING, 
         gobject.TYPE_STRING, 
