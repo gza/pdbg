@@ -4,11 +4,24 @@
 
 Xdebug's support of DBGp is not complete. Some core commands and many extended commands are not supported. This page details Xdebug's DBGp support.
 
+== General Issues
+
+  * How errors are handled is inconsistent (ie some set an attribute on response, some put a message in a node in response).
+  * There is no way to know from typemap_get which types can be set with property_set.
+
 == Core Commands ==
 
 === stderr ===
 
 This command is not supported at all. The implementation in the Xdebug source is just a hardcoded error response. (2.0.3)
+
+=== property_get ===
+
+This command does not return a dollar sign prefix on variable names, whereas context_get does.
+
+=== property_set ===
+
+The implementation of this command sets the success attribute twice on an unsupported type. this causes lxml to puke an exception.
 
 == Extended Commands ==
 
