@@ -25,7 +25,7 @@ The implementation of this command sets the success attribute twice on an unsupp
 
 === context_get ===
 
-When remote_mode is jit, calling context_get does not return any variables in context 0 (Locals).
+When remote_mode is jit, calling context_get does not return any variables in context 0 (Locals). But it does return superglobal data.
 
 == Extended Commands ==
 
