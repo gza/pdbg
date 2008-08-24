@@ -4,7 +4,7 @@
 
 Xdebug's support of DBGp is not complete. Some core commands and many extended commands are not supported. This page details Xdebug's DBGp support.
 
-== General Issues
+== General Issues ==
 
   * How errors are handled is inconsistent (ie some set an attribute on response, some put a message in a node in response).
   * There is no way to know from typemap_get which types can be set with property_set.
