@@ -6,3 +6,4 @@ The following bugs/issues exist in Xdebug:
   * there is no way to know which types from typemap_get can be set in property_set.
   * stderr is not implemented.
   * how errors are handled is inconsistent (ie some set an attribute on response, some put a message in a node in response).
+  * property_get does not return a dollar sign in the name attribute, whereas context_get does.
