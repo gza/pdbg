@@ -3,6 +3,7 @@
 = Project TODO =
 
   * Watch panel; see the value of variables in the current stack frame.
+  * Restrict the number of lines in the log textview.
 
 = Feature Ideas =
 
