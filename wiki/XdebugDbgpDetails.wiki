@@ -23,6 +23,8 @@ This command does not return a dollar sign prefix on variable names, whereas con
 
 The implementation of this command sets the success attribute twice on an unsupported type. this causes lxml to puke an exception.
 
+Cannot set a null value. (ie, you cannot pass null as a type).
+
 === context_get ===
 
 When remote_mode is jit, calling context_get does not return any variables in context 0 (Locals). But it does return superglobal data.
