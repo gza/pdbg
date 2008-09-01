@@ -72,6 +72,22 @@ class Connection(object):
             if response != None:
                 return response
         return None
+    
+    def recv_response_blocking(self):
+        """Receive a response from a debugger engine.
+
+        The return value is an EngineResponse object or an instance of a 
+        subclass of EngineResponse. Unlike recv_response, this method blocks
+        until an entire response is available.
+        """
+        while True:
+            data = self._socket.recv(self._builder.request_amount)
+            if data == '':
+                raise ConnectionClosed("connection closed by debugger engine")
+            self._builder.add_data(data)
+            response = self._builder.get_response()
+            if response != None:
+                return response
 
     def close(self):
         self._socket.close()
