@@ -91,6 +91,8 @@ class IdeCommand(object):
             cmd_parts.append('--')
             cmd_parts.append(b64encode(self._data))
         result = ' '.join(cmd_parts)
+        if self._data != None and self._data == '':
+            result += ' '
         if append_null:
             result = result + "\x00"
         return result

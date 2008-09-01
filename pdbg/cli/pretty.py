@@ -42,3 +42,23 @@ def format_trace(stack_elems):
             io.write(fmt3 % (num, elem['filename'], elem['lineno']))
         num += 1
     return io.getvalue().rstrip("\r\n")
+
+def format_value(prop):
+    if prop['type'] in ('string', 'int', 'float'):
+        return prop['value']
+    elif prop['type'] == 'bool':
+        if prop['value'] == '1':
+            return 'true'
+        else:
+            return 'false'
+    elif prop['type'] == 'array':
+        return 'array (length = %s)' % prop['numchildren']
+    elif prop['type'] == 'object':
+        return 'object'
+
+def format_property(prop):
+    io = StringIO()
+    io.write("name: %s\n" % prop['fullname'])
+    io.write("type: %s\n" % prop['type'])
+    io.write(" val: %s\n" % format_value(prop))
+    return io.getvalue().rstrip("\r\n")
