@@ -263,6 +263,9 @@ class PageManager(Manager):
         # Called by conn_mgr after on_init_stderr with the initial status of
         # the debugger engine.  Makes the new tab page show up.
 
+        if response.status == 'break':
+            mgr.send_stack_get(self.on_cont_stack_get)
+
         # TODO: something will be here eventually ...
         self._init_steps_done.add('status')
 

@@ -6,6 +6,7 @@
 __version__ = "$Id$"
 
 from connection import Connection
+from socketwrapper import SocketWrapper
 import socket
 import errno
 
@@ -15,7 +16,7 @@ class ConnectionListenerException(Exception):
 class ConnectionListener(object):
     """Listen for incoming DBGp debugger engine connections."""
 
-    def __init__(self, socket_wrapper, ip_address='127.0.0.1', port=9000):
+    def __init__(self, socket_wrapper=SocketWrapper, ip_address='127.0.0.1', port=9000):
         """ Construct an instance.
 
         The socket_wrapper parameter is a class the listener will wrap around
