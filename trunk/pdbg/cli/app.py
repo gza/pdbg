@@ -64,6 +64,8 @@ class App(Singleton):
 
         if session['status'] == 'break':
             (session['file_uri'], session['line_num']) = conn_mgr.get_position()
+        else:
+            session['file_uri'] = init.file_uri
 
         print("Debugging script at uri: " + init.file_uri)
         print("Type help for more information, or quit to exit the program.")
@@ -81,8 +83,7 @@ class App(Singleton):
                 command = command_factory(cmd_line)
                 command.execute()
             except CommandParserException, e:
-                remove_last_history_item()
-                print("Invalid command string: %s" % cmd_line)
+                print("Invalid command string: %s" % e.message)
             except ConnectionClosed, e:
                 print("Connection was closed remotely.")
                 return 

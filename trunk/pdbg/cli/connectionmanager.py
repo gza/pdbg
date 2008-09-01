@@ -9,6 +9,9 @@ import time
 from pdbg.app.patterns import *
 from pdbg.dbgp.connection import *
 
+class ConnectionManagerException(Exception):
+    pass
+
 class ConnectionManager(Singleton):
 
     def __init__(self):
