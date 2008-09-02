@@ -324,6 +324,41 @@ class BreakpointCommand(Command):
         print("Breakpoint %s set on line %s of %s" % \
             (resp.id, self._line_num, file_uri))
 
+class BreakCallCommand(Command):
+
+    @classmethod
+    def get_names(self):
+        return (('break_call',),)
+
+    def set_args(self, args):
+        func = args.get(0)
+        if func == '':
+            return False
+        parts = func.split('::', 1)
+        if len(parts) > 1:
+            self._class = parts[0]
+            self._func  = parts[1]
+        else:
+            self._class = None
+            self._func  = parts[0]
+        return True
+
+    def execute(self):
+        session = SessionManager.get_instance()
+        conn_mgr = ConnectionManager.get_instance()
+
+        args = {
+            '-t': 'call', 
+            '-m': self._func
+        }
+
+        if self._class != None:
+            args['-a'] = self._class
+
+        resp = conn_mgr.send_command('breakpoint_set', args)
+
+        print("Breakpoint %s set on %s" % (resp.id, self._func))
+
 class GetCommand(Command):
 
     @classmethod
@@ -374,6 +409,7 @@ class SetCommand(Command):
     def execute(self):
         conn_mgr = ConnectionManager.get_instance()
         session = SessionManager.get_instance()
+
         value = session.input('enter value: ')
 
         if self._name == 'set_str':
