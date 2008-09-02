@@ -51,6 +51,8 @@ def format_value(prop):
             return 'true'
         else:
             return 'false'
+    elif prop['type'] == 'null':
+        return 'null'
     elif prop['type'] == 'array':
         return 'array (length = %s)' % prop['numchildren']
     elif prop['type'] == 'object':
